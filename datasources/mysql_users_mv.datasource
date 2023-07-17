@@ -1,0 +1,20 @@
+# Data Source created from Pipe 'mysql_users_raw_pipe'
+
+SCHEMA >
+    `id` Int16,
+    `name` String,
+    `email` String,
+    `address` String,
+    `phone_number` String,
+    `email_verified` Int8,
+    `onboarded` Int8,
+    `deleted` Int8,
+    `created_at` DateTime,
+    `updated_at` DateTime,
+    `event_timestamp` DateTime,
+    `lang` LowCardinality(FixedString(2))
+
+ENGINE "ReplacingMergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(updated_at)"
+ENGINE_SORTING_KEY "id"
+ENGINE_VER "updated_at"
