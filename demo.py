@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import psycopg2
 from psycopg2 import sql
 import mysql.connector
@@ -272,7 +274,7 @@ def tb_ensure_kafka_connection():
     else:
         print(f"Tinybird Confluent Connection {conf.TINYBIRD_CONFLUENT_CONNECTION_NAME} found.")
 
-def tb_datasource_list():
+def tb_datasources_list():
     print(f"Listing Tinybird Datasources...")
     resp = requests.get(
         TB_BASE_URL + "datasources",
@@ -282,36 +284,38 @@ def tb_datasource_list():
     print(f"Found {len(resp.json()['datasources'])} Tinybird Datasources.")
     return resp.json()['datasources']
 
-def tb_datasource_truncate(name, include_quarantine=True):
-    if include_quarantine:
-        ds_names = [name, name + "_quarantine"]
-    else:
-        ds_names = [name]
+def tb_datasources_truncate(names, include_quarantine=True):
+    ds_list = tb_datasources_list()
+    for name in names:
+        if include_quarantine:
+            ds_names = [name, name + "_quarantine"]
+        else:
+            ds_names = [name]
     for ds_name in ds_names:
-        ds_list = tb_datasource_list()
         if ds_name not in [x['name'] for x in ds_list]:
             print(f"Tinybird Datasource {ds_name} not found.")
-            return
-        print(f"Truncating Tinybird Datasource {ds_name}")
-        resp = requests.post(
-            TB_BASE_URL + f"datasources/{ds_name}/truncate",
-            headers={'Authorization': f'Bearer {conf.TINYBIRD_API_KEY}'}
-        )
-        resp.raise_for_status()
-        print(f"Truncated Tinybird Datasource {ds_name}")
+        else:
+            print(f"Truncating Tinybird Datasource {ds_name}")
+            resp = requests.post(
+                TB_BASE_URL + f"datasources/{ds_name}/truncate",
+                headers={'Authorization': f'Bearer {conf.TINYBIRD_API_KEY}'}
+            )
+            resp.raise_for_status()
+            print(f"Truncated Tinybird Datasource {ds_name}")
 
-def tb_datasource_delete(name):
-    ds_list = tb_datasource_list()
-    if name not in [x['name'] for x in ds_list]:
-        print(f"Tinybird Datasource {name} not found.")
-        return
-    print(f"Deleting Tinybird Datasource {name}")
-    resp = requests.delete(
-        TB_BASE_URL + f"datasources/{name}",
-        headers={'Authorization': f'Bearer {conf.TINYBIRD_API_KEY}'}
-    )
-    resp.raise_for_status()
-    print(f"Deleted Tinybird Datasource {name}")
+def tb_datasources_delete(names):
+    ds_list = tb_datasources_list()
+    for name in names:
+        if name not in [x['name'] for x in ds_list]:
+            print(f"Tinybird Datasource {name} not found.")
+        else:
+            print(f"Deleting Tinybird Datasource {name}")
+            resp = requests.delete(
+                TB_BASE_URL + f"datasources/{name}",
+                headers={'Authorization': f'Bearer {conf.TINYBIRD_API_KEY}'}
+            )
+            resp.raise_for_status()
+            print(f"Deleted Tinybird Datasource {name}")
 
 def tb_replace_kafka_group_id(filename):
     print(f"Generating new Kafka Group ID in {filename}...")
@@ -377,7 +381,7 @@ def tb_upload_def_for_db(source_db):
     _ = [tb_upload_def_file(filepath) for filepath in files_to_upload]
     print(f"Uploaded {len(files_to_upload)} Tinybird definitions for {source_db}.")
 
-def tb_pipe_list():
+def tb_pipes_list():
     print(f"Listing Tinybird Pipes...")
     resp = requests.get(
         TB_BASE_URL + "pipes",
@@ -387,30 +391,78 @@ def tb_pipe_list():
     print(f"Found {len(resp.json()['pipes'])} Tinybird Pipes.")
     return resp.json()['pipes']
 
-def tb_pipe_delete(name):
-    pipes_list = tb_pipe_list()
-    if name not in [x['name'] for x in pipes_list]:
-        print(f"Tinybird Pipe {name} not found.")
-        return
-    print(f"Deleting Tinybird Pipe {name}")
-    resp = requests.delete(
-        TB_BASE_URL + f"pipes/{name}",
+def tb_pipes_delete(names):
+    pipes_list = tb_pipes_list()
+    for name in names:
+        if name not in [x['name'] for x in pipes_list]:
+            print(f"Tinybird Pipe {name} not found.")
+        else:
+            print(f"Deleting Tinybird Pipe {name}")
+            resp = requests.delete(
+                TB_BASE_URL + f"pipes/{name}",
+                headers={'Authorization': f'Bearer {conf.TINYBIRD_API_KEY}'}
+            )
+            resp.raise_for_status()
+            print(f"Deleted Tinybird Pipe {name}")
+
+def tb_clean_workspace(source_db):
+    print(f"Cleaning Tinybird workspace for {source_db}...")
+    files = tb_get_def_files_for_db(source_db)
+    pipes = [file for file in files if os.path.dirname(file) == './pipes']
+    datasources = [file for file in files if os.path.dirname(file) == './datasources']
+    # Do Pipes first
+    tb_pipes_delete([os.path.basename(file).split('.')[0] for file in pipes])
+    # Then do Datasources
+    tb_datasources_delete([os.path.basename(file).split('.')[0] for file in datasources])
+    # Then do Dataspace Tokens
+    current_tokens = tb_tokens_list()
+    current_token_names = [x['name'] for x in current_tokens]
+    kafka_token_patten = "_".join([
+        conf.TINYBIRD_CONFLUENT_CONNECTION_NAME,
+        source_db.lower(),
+        conf.USERS_TABLE_NAME
+        ])
+    tokens_to_remove = [
+        token_name for token_name in current_token_names if token_name.startswith(kafka_token_patten)
+        ]
+    # Then do Pipe Tokens
+    tokens_to_remove += [
+        x for x in tb_get_token_names_from_pipes(pipes) if x in current_token_names
+        ]
+    print(f"Found {len(tokens_to_remove)} Tinybird Tokens to remove for {source_db}.")
+    # Do token removal
+    _ = [tb_tokens_delete(token_name) for token_name in tokens_to_remove]
+    
+    
+def tb_get_token_names_from_pipes(pipes):
+    token_names = []
+    token_pattern = "TOKEN"
+    for pipe_file in pipes:
+        with open(pipe_file, 'r') as file:
+            for line in file:
+                if line.startswith(token_pattern):
+                    token_name = line.split()[1].strip('\"')  # remove quotes from token name
+                    token_names.append(token_name)
+    return token_names
+
+def tb_tokens_list():
+    print(f"Listing Tinybird Tokens...")
+    resp = requests.get(
+        TB_BASE_URL + "tokens",
         headers={'Authorization': f'Bearer {conf.TINYBIRD_API_KEY}'}
     )
     resp.raise_for_status()
-    print(f"Deleted Tinybird Pipe {name}")
+    print(f"Found {len(resp.json()['tokens'])} Tinybird Tokens.")
+    return resp.json()['tokens']
 
-def tb_clean_workspace(source_db):
-    files = tb_get_def_files_for_db(source_db)
-    # Do Pipes first
-    for file in files:    
-        if os.path.dirname(file) == './pipes':
-            tb_pipe_delete(os.path.basename(file).split('.')[0])
-    # Then do Datasources
-    for file in files:        
-        if os.path.dirname(file) == './datasources':
-            tb_datasource_delete(os.path.basename(file).split('.')[0])
-    
+def tb_tokens_delete(name):
+    print(f"Deleting Tinybird Token {name}")
+    resp = requests.delete(
+        TB_BASE_URL + f"tokens/{name}",
+        headers={'Authorization': f'Bearer {conf.TINYBIRD_API_KEY}'}
+    )
+    resp.raise_for_status()
+    print(f"Deleted Tinybird Token {name}")
 
 def cflt_environment_list():
     print("Listing Confluent Cloud Environments...")

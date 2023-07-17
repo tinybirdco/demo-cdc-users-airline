@@ -1,4 +1,4 @@
-TOKEN "Users_api_pipe_endpoint_read_9484" READ
+TOKEN "pg_users_api_read" READ
 
 NODE Users_api_0
 SQL >

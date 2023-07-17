@@ -19,7 +19,7 @@ ENGINE_SORTING_KEY "id, updated_at"
 
 KAFKA_CONNECTION_NAME 'cluster_eu'
 KAFKA_TOPIC 'mysql_cdc_demo.mysql_cdc_demo.users'
-KAFKA_GROUP_ID 'mysql_cdc_demo.mysql_cdc_demo.users_1689591724'
+KAFKA_GROUP_ID 'mysql_cdc_demo.mysql_cdc_demo.users_1689607915'
 KAFKA_AUTO_OFFSET_RESET 'earliest'
 KAFKA_STORE_RAW_VALUE 'False'
 KAFKA_STORE_HEADERS 'False'

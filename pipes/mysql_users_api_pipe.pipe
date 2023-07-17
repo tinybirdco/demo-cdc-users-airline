@@ -1,4 +1,4 @@
-TOKEN "mysql_users_api_pipe_endpoint_read_9104" READ
+TOKEN "mysql_users_api_read" READ
 
 NODE Users_api_0
 SQL >
@@ -6,5 +6,3 @@ SQL >
     SELECT * FROM mysql_users_mv FINAL
     where deleted = false
     order by id
-
-
