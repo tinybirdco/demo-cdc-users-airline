@@ -1,0 +1,10 @@
+TOKEN "Users_api_pipe_endpoint_read_9484" READ
+
+NODE Users_api_0
+SQL >
+
+    SELECT * FROM pg_users_mv FINAL
+    where deleted = false
+    order by id
+
+
