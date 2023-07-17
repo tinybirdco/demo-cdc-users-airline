@@ -39,8 +39,9 @@ Once you have it set up, install the project requirements with
 ```
 pip install -r requirements.txt
 ```
+
  
-## Setup the Demo
+## Getting Setup
 
 Now we can walk through deploying the infrastructure.
 
@@ -86,27 +87,6 @@ You must enable Backups as well.
 
 Grab the connectivity information and put it into conf.py
 
-### Things to know
-
-The Confluent connector for each Database type is automatically created for you, the process is quite simple and you can inspect it in the code. Note that the submission parameters are very speific and taken from the Confluent documentation; if you wish to experiment with other settings go right ahead.
-
-Once created, the Connectors and Topics will appear in your Confluent Cloud console as usual.
-
-The Topic is automatically created with a single partition for simplicity.
-
-If you want to create with multiple partitions for performance, you will also probably want to ensure your rows are partitioned by ID to ensure updates easy to sequentially process.
-
-The script attempts to use publicly documented APIs or processes, just executed within a simple python environment. We try to minimise dependencies.
-One notable choice is using the Tinybird definition files instead of raw API calls, as this mimics typical user CLI behavior and they are easier to read than raw python objects.
-
-### Troubleshooting
-
-If you recreate the Table and Confluent setup, you also have to recreate the Tinybird raw Data Source otherwise it'll still be using the existing consumer group and offsets.
-
-The script assumes your CONFLUENT_CLOUD_KEY has the same rights as you would in the console, and is not a limited access service account.
-
-If you are experimenting with other settings you may wish to create the Connector in the Confluent UI first, as it has more robust checking. The API sometimes simply gives a 500 if it doesn't like a field you have submitted, whereas the UI is a little more verbose.
-
 ## Using the Demo
 
 In these following commands you should submit either 'PG' or 'MYSQL' as your Database type with the ``--source-db`` command. 
@@ -135,3 +115,25 @@ You can remove the pipeline again using the removal command, this can also be us
 ```
 python demo.py --remove-pipeline --source-db PG
 ```
+
+## Things to know
+
+The Confluent connector for each Database type is automatically created for you, the process is quite simple and you can inspect it in the code. Note that the submission parameters are very speific and taken from the Confluent documentation; if you wish to experiment with other settings go right ahead.
+
+Once created, the Connectors and Topics will appear in your Confluent Cloud console as usual.
+
+The Topic is automatically created with a single partition for simplicity.
+
+If you want to create with multiple partitions for performance, you will also probably want to ensure your rows are partitioned by ID to ensure updates easy to sequentially process.
+
+The script attempts to use publicly documented APIs or processes, just executed within a simple python environment. We try to minimise dependencies.
+One notable choice is using the Tinybird definition files instead of raw API calls, as this mimics typical user CLI behavior and they are easier to read than raw python objects.
+
+## Troubleshooting
+
+If you recreate the Table and Confluent setup, you also have to recreate the Tinybird raw Data Source otherwise it'll still be using the existing consumer group and offsets.
+
+The script assumes your CONFLUENT_CLOUD_KEY has the same rights as you would in the console, and is not a limited access service account.
+
+If you are experimenting with other settings you may wish to create the Connector in the Confluent UI first, as it has more robust checking. The API sometimes simply gives a 500 if it doesn't like a field you have submitted, whereas the UI is a little more verbose.
+
