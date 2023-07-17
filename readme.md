@@ -40,7 +40,6 @@ Once you have it set up, install the project requirements with
 pip install -r requirements.txt
 ```
 
- 
 ## Getting Setup
 
 Now we can walk through deploying the infrastructure.
@@ -52,8 +51,13 @@ Clone this repo locally, and get ready to put the required information into ``co
 ### Confluent Cloud
 If you don't already have a Confluent Cloud Environment and Kafka Cluster, you will need to create one.
 
+Your cluster will need to be able to connect to AWS RDS, so either make it publicly accessible or ensure that you create the right security rules on both sides.
+Likewise, Tinybird will need to be able to connect to Confluent, so ensure it is available to Tinybird as well.
+
 ### Tinybird
 If you don't already have a Tinybird Workspace, you will need to create one.
+
+You can test if Tinybird can connect to your Confluent cluster by putting the connection details into the 'Add Datasource' interface in the UI - if it can connect it will retrieve a list of Topics on the cluster.
 
 ### Using Postgres
 
@@ -118,7 +122,7 @@ python demo.py --remove-pipeline --source-db PG
 
 ## Things to know
 
-The Confluent connector for each Database type is automatically created for you, the process is quite simple and you can inspect it in the code. Note that the submission parameters are very speific and taken from the Confluent documentation; if you wish to experiment with other settings go right ahead.
+The Confluent connector for each Database type is automatically created for you, the process is quite simple and you can inspect it in the code. Note that the submission parameters are very speific and taken from the Confluent documentation; if you wish to experiment with other settings go right ahead but change and test carefully.
 
 Once created, the Connectors and Topics will appear in your Confluent Cloud console as usual.
 
