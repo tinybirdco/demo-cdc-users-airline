@@ -1,0 +1,55 @@
+TOKEN "pg_users_api_batch" READ
+
+NODE get_new_events
+SQL >
+
+    WITH (SELECT max(batch_max_updated) FROM pg_users_batch) as last_batch_ts
+    SELECT 
+        id, 
+        argMax(name, updated_at) as name, 
+        argMax(email, updated_at) as email, 
+        argMax(address, updated_at) as address, 
+        argMax(phone_number, updated_at) as phone_number, 
+        argMax(email_verified, updated_at) as email_verified, 
+        argMax(onboarded, updated_at) as onboarded,
+        argMax(deleted, updated_at) as deleted,
+        argMax(__timestamp, updated_at) as event_timestamp,
+        argMax(toFixedString(lang, 2), updated_at) as lang,
+        argMax(fromUnixTimestamp64Micro(created_at), updated_at) as created_at,
+        max(updated_at) as updated_at_unix,
+        max(updated_at) as batch_max_updated
+    FROM pg_users_raw
+    WHERE updated_at > last_batch_ts
+    GROUP BY id
+
+
+
+NODE backfill_last_batch
+SQL >
+
+    WITH (SELECT max(batch_max_updated) FROM pg_users_batch) as last_batch_ts
+    SELECT * FROM pg_users_batch
+    WHERE batch_max_updated = last_batch_ts 
+    AND id NOT IN (select id from get_new_events)
+
+
+
+NODE produce_api
+SQL >
+
+    SELECT * EXCEPT (batch_max_updated, updated_at_unix), fromUnixTimestamp64Micro(updated_at_unix) as updated_at 
+    FROM backfill_last_batch
+    UNION ALL
+    SELECT * EXCEPT (batch_max_updated, updated_at_unix), fromUnixTimestamp64Micro(updated_at_unix) as updated_at 
+    FROM get_new_events
+
+
+
+NODE pg_users_api_batch_3
+SQL >
+
+    SELECT * FROM produce_api
+    where deleted = false
+    order by id
+
+

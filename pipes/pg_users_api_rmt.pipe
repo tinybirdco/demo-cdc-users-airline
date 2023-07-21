@@ -1,4 +1,4 @@
-TOKEN "pg_users_api_read" READ
+TOKEN "pg_users_api_rmt" READ
 
 NODE Users_api_0
 SQL >
