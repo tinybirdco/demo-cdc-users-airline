@@ -52,7 +52,7 @@ def mysql_connect_db():
     print("Connected to the MySQL database.")
     return conn
 
-def mysql_table_create(conn, table_name=conf.USERS_TABLE_NAME):
+def mysql_table_create(conn, table_name):
     try:
         print(f"Creating the {table_name} table if not exists...")
         cur = conn.cursor()
@@ -95,7 +95,7 @@ def pg_connect_db():
     print("Connected to the Postgres database.")
     return conn
 
-def pg_table_create(conn, table_name=conf.USERS_TABLE_NAME):
+def pg_table_create(conn, table_name):
     try:
         print(f"Creating the {table_name} table if not exists...")
         cur = conn.cursor()
@@ -126,7 +126,7 @@ def pg_table_create(conn, table_name=conf.USERS_TABLE_NAME):
         print(f"Error creating table: {e}")
         conn.rollback()
 
-def db_table_fetch(conn, table_name=conf.USERS_TABLE_NAME):
+def db_table_fetch(conn, table_name):
     print("Fetching the current list of users...")
     with conn.cursor() as cur:
         cur.execute(f"SELECT * FROM {table_name}")
@@ -134,7 +134,7 @@ def db_table_fetch(conn, table_name=conf.USERS_TABLE_NAME):
     print(f"Fetched {len(users)} users.")
     return users
 
-def db_table_print(conn, table_name=conf.USERS_TABLE_NAME):
+def db_table_print(conn, table_name):
     cur = conn.cursor()
     cur.execute(f"SELECT * FROM {table_name} ORDER BY id ASC")
     users = cur.fetchall()
@@ -143,7 +143,7 @@ def db_table_print(conn, table_name=conf.USERS_TABLE_NAME):
         print(user)
     cur.close()
 
-def db_table_drop(conn, table_name=conf.USERS_TABLE_NAME):
+def db_table_drop(conn, table_name):
     print(f"Dropping the {table_name} table if exists...")
     cur = conn.cursor()
     cur.execute(f'DROP TABLE IF EXISTS {table_name}')
@@ -178,10 +178,10 @@ def k_topic_delete(topic_name):
     print(f"Deleted Kafka topic {topic_name}.")
 
 def tb_connection_create_kafka(
-    kafka_bootstrap_servers=conf.CONFLUENT_BOOTSTRAP_SERVERS,
-    kafka_key=conf.CONFLUENT_UNAME,
-    kafka_secret=conf.CONFLUENT_SECRET,
-    kafka_connection_name=conf.TINYBIRD_CONFLUENT_CONNECTION_NAME,
+    kafka_bootstrap_servers,
+    kafka_key,
+    kafka_secret,
+    kafka_connection_name,
     kafka_auto_offset_reset="earliest",
     kafka_schema_registry_url=None,
     kafka_sasl_mechanism="PLAIN"):
@@ -232,7 +232,7 @@ def tb_connection_delete(connection_id):
     resp.raise_for_status()
     print(f"Deleted Kafka Connector with id {connection_id}")
 
-def tb_connection_get(name=conf.TINYBIRD_CONFLUENT_CONNECTION_NAME):
+def tb_connection_get(name):
     print(f"Getting Tinybird Connection with name {name}...")
     connectors = tb_connection_list()
     for connector in connectors:
@@ -243,7 +243,7 @@ def tb_connection_get(name=conf.TINYBIRD_CONFLUENT_CONNECTION_NAME):
     return None
 
 def tb_connection_test():
-    connector = tb_connection_get(conf.TINYBIRD_CONFLUENT_CONNECTION_NAME)
+    connector = tb_connection_get(name=conf.TINYBIRD_CONFLUENT_CONNECTION_NAME)
     if not connector:
         print(f"Tinybird Confluent Connection not found for name: {conf.TINYBIRD_CONFLUENT_CONNECTION_NAME}")
         return 0
@@ -262,13 +262,24 @@ def tb_ensure_kafka_connection():
     status = tb_connection_test()
     if status == 0:
         print("Tinybird Confluent Connection not found. Creating...")
-        tb_connection_create_kafka()
+        tb_connection_create_kafka(
+            kafka_bootstrap_servers=conf.CONFLUENT_BOOTSTRAP_SERVERS,
+            kafka_key=conf.CONFLUENT_UNAME,
+            kafka_secret=conf.CONFLUENT_SECRET,
+            kafka_connection_name=conf.TINYBIRD_CONFLUENT_CONNECTION_NAME,
+        )
     elif status == -1:
         print("Tinybird Confluent Connection not working. Deleting and creating...")
-        connector = tb_connection_get(conf.TINYBIRD_CONFLUENT_CONNECTION_NAME)
+        connector = tb_connection_get(name=conf.TINYBIRD_CONFLUENT_CONNECTION_NAME)
         tb_connection_delete(connector['id'])
         time.sleep(5)
-        tb_connection_create_kafka()
+        tb_connection_create_kafka(
+            kafka_bootstrap_servers=conf.CONFLUENT_BOOTSTRAP_SERVERS,
+            kafka_key=conf.CONFLUENT_UNAME,
+            kafka_secret=conf.CONFLUENT_SECRET,
+            kafka_connection_name=conf.TINYBIRD_CONFLUENT_CONNECTION_NAME,
+        )
+        
         if not tb_connection_test():
             raise Exception("Tinybird Confluent Connection not working after recreation.")
     else:
@@ -408,12 +419,16 @@ def tb_pipes_delete(names):
 def tb_clean_workspace(source_db):
     print(f"Cleaning Tinybird workspace for {source_db}...")
     files = tb_get_def_files_for_db(source_db)
-    pipes = [file for file in files if os.path.dirname(file) == './pipes']
-    datasources = [file for file in files if os.path.dirname(file) == './datasources']
+    pipes_to_delete = [file for file in files if os.path.dirname(file) == './pipes']
+    datasources_to_delete = [file for file in files if os.path.dirname(file) == './datasources']
     # Do Pipes first
-    tb_pipes_delete([os.path.basename(file).split('.')[0] for file in pipes])
+    current_pipe_names = [x['name'] for x in tb_pipes_list()]
+    pipenames_to_delete = [os.path.basename(file).split('.')[0] for file in pipes_to_delete]
+    tb_pipes_delete([x for x in pipenames_to_delete if x in current_pipe_names])
     # Then do Datasources
-    tb_datasources_delete([os.path.basename(file).split('.')[0] for file in datasources])
+    current_datasource_names = [x['name'] for x in tb_datasources_list()]
+    datasourcenames_to_delete = [os.path.basename(file).split('.')[0] for file in datasources_to_delete]
+    tb_datasources_delete([x for x in datasourcenames_to_delete if x in current_datasource_names])
     # Then do Dataspace Tokens
     current_tokens = tb_tokens_list()
     current_token_names = [x['name'] for x in current_tokens]
@@ -427,13 +442,12 @@ def tb_clean_workspace(source_db):
         ]
     # Then do Pipe Tokens
     tokens_to_remove += [
-        x for x in tb_get_token_names_from_pipes(pipes) if x in current_token_names
+        x for x in tb_get_token_names_from_pipes(pipes_to_delete) if x in current_token_names
         ]
     print(f"Found {len(tokens_to_remove)} Tinybird Tokens to remove for {source_db}.")
     # Do token removal
-    _ = [tb_tokens_delete(token_name) for token_name in tokens_to_remove]
-    
-    
+    _ = [tb_tokens_delete(token_name) for token_name in set(tokens_to_remove)]
+
 def tb_get_token_names_from_pipes(pipes):
     token_names = []
     token_pattern = "TOKEN"
@@ -473,16 +487,16 @@ def cflt_environment_list():
     resp.raise_for_status()
     return resp.json()['data']
 
-def cflt_environment_get(name=conf.CONFLUENT_ENV_NAME):
-    print(f"Getting Confluent Cloud Environment with name {name}...")
+def cflt_environment_get(env_name):
+    print(f"Getting Confluent Cloud Environment with name {env_name}...")
     envs = cflt_environment_list()
     for env in envs:
-        if env['display_name'] == name:
+        if env['display_name'] == env_name:
             return env
     return None
 
-def cflt_cluster_list(environment_name=conf.CONFLUENT_ENV_NAME):
-    env_id = cache_cflt_env_id(environment_name)
+def cflt_cluster_list(env_name):
+    env_id = cache_cflt_env_id(env_name)
     print("Listing Confluent Cloud Clusters...")
     resp = requests.get(
         CFLT_BASE_URL + f"cmk/v2/clusters?environment={env_id}",
@@ -491,36 +505,36 @@ def cflt_cluster_list(environment_name=conf.CONFLUENT_ENV_NAME):
     resp.raise_for_status()
     return resp.json()['data']
 
-def cflt_cluster_get(name=conf.CONFLUENT_CLUSTER_NAME, environment_name=conf.CONFLUENT_ENV_NAME):
-    print(f"Getting Confluent Cloud Cluster with name {name}...")
-    clusters = cflt_cluster_list(environment_name)
+def cflt_cluster_get(cluster_name, env_name):
+    print(f"Getting Confluent Cloud Cluster with name {cluster_name}...")
+    clusters = cflt_cluster_list(env_name)
     for cluster in clusters:
-        if cluster['spec']['display_name'] == name:
+        if cluster['spec']['display_name'] == cluster_name:
             return cluster
     return None
 
-def cache_cflt_env_id(name=conf.CONFLUENT_ENV_NAME):
+def cache_cflt_env_id(env_name):
     if 'clft_env_id' in cache and cache['clft_env_id'] is not None:
         return cache['clft_env_id']
-    environment = cflt_environment_get(name)
+    environment = cflt_environment_get(env_name)
     if not environment:
-        raise Exception(f"Environment {name} not found.")
+        raise Exception(f"Environment {env_name} not found.")
     cache['clft_env_id'] = environment['id']
     return environment['id']
 
-def cache_cflt_cluster_id(name=conf.CONFLUENT_CLUSTER_NAME):
+def cache_cflt_cluster_id(cluster_name, env_name):
     if 'clft_cluster_id' in cache and cache['clft_cluster_id'] is not None:
         return cache['clft_cluster_id']
-    cluster = cflt_cluster_get(name)
+    cluster = cflt_cluster_get(cluster_name=cluster_name, env_name=env_name)
     if not cluster:
-        raise Exception(f"Cluster {name} not found.")
+        raise Exception(f"Cluster {cluster_name} not found.")
     cache['clft_cluster_id'] = cluster['id']
     return cluster['id']
 
-def cflt_connector_list(environment_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME):
+def cflt_connector_list(cluster_name, env_name):
     print(f"Listing Confluent Cloud Connectors for Cluster {cluster_name}...")
-    cluster_id = cache_cflt_cluster_id(cluster_name)
-    env_id = cache_cflt_env_id(environment_name)
+    env_id = cache_cflt_env_id(env_name)
+    cluster_id = cache_cflt_cluster_id(cluster_name=cluster_name, env_name=env_name)
     resp = requests.get(
         CFLT_BASE_URL + f"connect/v1/environments/{env_id}/clusters/{cluster_id}/connectors",
         auth=(conf.CONFLUENT_CLOUD_KEY, conf.CONFLUENT_CLOUD_SECRET)
@@ -528,13 +542,13 @@ def cflt_connector_list(environment_name=conf.CONFLUENT_ENV_NAME, cluster_name=c
     resp.raise_for_status()
     return resp.json()
 
-def cflt_connector_delete(name, environment_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME):
-    if name not in cflt_connector_list():
+def cflt_connector_delete(name, env_name, cluster_name):
+    if name not in cflt_connector_list(cluster_name=cluster_name, env_name=env_name):
         print(f"Confluent Cloud Connector with name {name} not found.")
         return
     print(f"Deleting Confluent Cloud Connector with name {name}...")
-    cluster_id = cache_cflt_cluster_id(cluster_name)
-    env_id = cache_cflt_env_id(environment_name)
+    env_id = cache_cflt_env_id(env_name)
+    cluster_id = cache_cflt_cluster_id(cluster_name=cluster_name, env_name=env_name)
     resp = requests.delete(
         CFLT_BASE_URL + f"connect/v1/environments/{env_id}/clusters/{cluster_id}/connectors/{name}",
         auth=(conf.CONFLUENT_CLOUD_KEY, conf.CONFLUENT_CLOUD_SECRET)
@@ -542,15 +556,15 @@ def cflt_connector_delete(name, environment_name=conf.CONFLUENT_ENV_NAME, cluste
     resp.raise_for_status()
     print(f"Deleted Confluent Cloud Connector with name {name}")
 
-def cflt_connector_create(name, source_db, environment_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME):
+def cflt_connector_create(name, source_db, env_name, cluster_name):
     # The API response for this call can be obtuse, sending 500 for minor misconfigurations.
     # Therefore change carefully and test thoroughly.
-    if name in cflt_connector_list():
+    if name in cflt_connector_list(cluster_name=cluster_name, env_name=env_name):
         print(f"Confluent Cloud Connector with name {name} already exists.")
         return
     print(f"Creating Confluent Cloud Connector with name {name}...")
-    cluster_id = cache_cflt_cluster_id(cluster_name)
-    env_id = cache_cflt_env_id(environment_name)
+    env_id = cache_cflt_env_id(env_name)
+    cluster_id = cache_cflt_cluster_id(cluster_name=cluster_name, env_name=env_name)
 
     base_config = {
         "name": name,
@@ -608,7 +622,7 @@ def cflt_connector_create(name, source_db, environment_name=conf.CONFLUENT_ENV_N
     resp.raise_for_status()
     print(f"Created Confluent Cloud Connector with name {name}")
 
-def generate_events(conn, num_events, table_name=conf.USERS_TABLE_NAME):
+def generate_events(conn, num_events, table_name):
     print("Generating user events...")
     cur = conn.cursor()
 
@@ -700,7 +714,6 @@ def generate_events(conn, num_events, table_name=conf.USERS_TABLE_NAME):
     cur.close()
     print("User events generated.")
 
-
 def test_connectivity(db_type):
     # Test PostgreSQL connection
     if db_type == 'PG':
@@ -782,30 +795,35 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
         raise Exception(f"Invalid source_db: {source_db}")
     if remove_pipeline:
         print(f"Resetting the Tinybird pipeline from {source_db}...")
-        cflt_connector_delete(confluent_connection_name)
+        cflt_connector_delete(confluent_connection_name, env_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME)
         k_topic_delete(kafka_topic_name)
-        db_table_drop(conn)
+        db_table_drop(conn, table_name=conf.USERS_TABLE_NAME)
         tb_clean_workspace(source_db)
         print("Pipeline Removed.")
     elif tb_connect_kafka:
-        tb_connection_create_kafka()
+        tb_connection_create_kafka(
+            kafka_bootstrap_servers=conf.CONFLUENT_BOOTSTRAP_SERVERS,
+            kafka_key=conf.CONFLUENT_UNAME,
+            kafka_secret=conf.CONFLUENT_SECRET,
+            kafka_connection_name=conf.TINYBIRD_CONFLUENT_CONNECTION_NAME,
+        )
     elif test_connection:
         test_connectivity(source_db)
     elif fetch_users:
-        db_table_print(conn)
+        db_table_print(conn, table_name=conf.USERS_TABLE_NAME)
     elif drop_table:
-        db_table_drop(conn)
+        db_table_drop(conn, table_name=conf.USERS_TABLE_NAME)
     elif tb_clean:
         tb_clean_workspace(source_db)
     elif create_pipeline:
-        db_table_create_func(conn)
-        cflt_connector_create(name=confluent_connection_name, source_db=source_db)
+        db_table_create_func(conn, table_name=conf.USERS_TABLE_NAME)
+        cflt_connector_create(name=confluent_connection_name, source_db=source_db, env_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME)
         tb_ensure_kafka_connection()
-        generate_events(conn, NUM_EVENTS)
+        generate_events(conn, num_events=NUM_EVENTS, table_name=conf.USERS_TABLE_NAME)
         tb_upload_def_for_db(source_db)       
     else:
         try:
-            generate_events(conn, NUM_EVENTS)
+            generate_events(conn, num_events=NUM_EVENTS, table_name=conf.USERS_TABLE_NAME)
             print(f'{NUM_EVENTS} events generated.')
         except Exception as e:
             print(f'Error: {e}')
