@@ -2,25 +2,31 @@
 
 This repo walks through learning how to replicate a transactional table into Tinybird, so that all changes are captured in near real-time.
 
-* We provide the examples of a simple Users table that has inserts, updates and deletes.
+* We provide an example of a simple `Users` table that has inserts, updates and deletes.
 * We provide examples of sourcing from both Postgres and MySQL, both hosted on AWS RDS.
-* The Table is captured using the Confluent Cloud Debezium connector into a Kafka Topic containing both the initial snapshot and the change events.
-* This is then ingested into Tinybird in a raw format, and then materialized into a replica of the original Users table where updates and deletes have been finalised.
-* We handle the variations between PG and MYSQL types
-* We use a combination of the source Database ``ID`` column and a last updated timestamp ``updated_at`` to show how Tinybird can quickly and easily reconstruct the table.
+* The Table is captured using a Confluent Cloud CDC Connector, which is based on Debezium. This Connector streams the CDC events onto a Topic with a name based on the database schema and table name. This Connector can send the initial snapshot of the table along with change events.
+* This Topic is then ingested into Tinybird in a raw format, and materialized into a replica of the current Users table where updates and deletes have been finalised.
+* We handle the variations between Postgres and MySQL types
+* We can use a combination of the source database ``id`` column and a last updated timestamp ``updated_at`` to show how Tinybird can quickly and easily reconstruct the table.
+* Once everything is configured (see below), the `demo.py` script handles creating the database table, creating the Debezium connection, creating Tinybird Data Sources, Pipes, and an API Endpoint, and generating CDC event by updating the soruce Database.
+* This demo was developed with databases on AWS RDS. The demo should work with other cloud providers of Postgres and MySQL.
+* This demo was developed with Confluent Cloud and its APIs.  Any cloud provider with a Debezium-based connector should work with CDC processing, but this demo script exercises Confluent APIs for creating and deleting resources. 
 
-All of this is automatically created or removed for you using this script, barring the initial setup of the RDS instances of the source databases, and creating your Confluent Cluster and Tinybird Workspace. 
+To get started with this demo, you need to the following:
+* A Postgres or MySQL database on a server configured to generate CDC events.
+* A Confluent Cloud account, with a cluster already created.
+* A Tinybird Workspace created to ingest the CDC events. 
 
 The demo script will:
 
-1. Ensure the Source Database exists
-2. Ensure the 'users' table is created
-3. Generate a few initial events into the users table to be replicated
-4. Create the appropriate Debezium Connector in Confluent Cloud
-5. The Debezium connector will create the Kafka Topic, snapshot the initial table state, and start replicating changes
-6. Ensure that Tinybird is has a Confluent connection to your Confluent Cloud cluster
+1. Ensure the Source Database exists.
+2. Ensure a table with the configured name is created. 
+3. Generate a few initial events into the users table to be replicated.
+4. Create the appropriate Postgres or MySQL Debezium-based Connector in Confluent Cloud.
+5. The Confluent Connector will create the Kafka Topic, snapshot the initial table state, and start replicating changes.
+6. Ensure that Tinybird has a Confluent connection to your Confluent Cloud cluster.
 7. Ingest the Topic into a 'raw' Tinybird Confluent Datasource containing all the user table change events.
-8. Create a Tinybird Pipe which Materializes the users table with all changes in their final state
+8. Create a Tinybird Pipe which Materializes the users table with all changes in their final state.
 9. Publishes a simple Tinybird API which returns all non-deleted users.
 
 You may re-run the demo script to generate further events to explore how they propagate through the pipeline.
@@ -48,10 +54,13 @@ Now we can walk through deploying the infrastructure.
 
 Clone this repo locally, and get ready to put the required information into ``conf.py``
 
+### Confirm your database server is configured to generate CDC events. 
+
 ### Confluent Cloud
 If you don't already have a Confluent Cloud Environment and Kafka Cluster, you will need to create one.
 
 Your cluster will need to be able to connect to AWS RDS, so either make it publicly accessible or ensure that you create the right security rules on both sides.
+
 Likewise, Tinybird will need to be able to connect to Confluent, so ensure it is available to Tinybird as well.
 
 ### Tinybird
