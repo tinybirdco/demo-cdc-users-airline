@@ -166,6 +166,7 @@ def k_topic_list():
     topics_metadata = kadmin.list_topics(timeout=5)
     if not topics_metadata:
         raise Exception("No topics found.")
+    print(f"Found {len(topics_metadata.topics)} Kafka topics.")
     return topics_metadata.topics
 
 def k_topic_delete(topic_name):
@@ -182,7 +183,7 @@ def tb_connection_create_kafka(
     kafka_key,
     kafka_secret,
     kafka_connection_name,
-    kafka_auto_offset_reset="earliest",
+    kafka_auto_offset_reset=conf.CONFLUENT_OFFSET_RESET,
     kafka_schema_registry_url=None,
     kafka_sasl_mechanism="PLAIN"):
 
@@ -328,26 +329,54 @@ def tb_datasources_delete(names):
             resp.raise_for_status()
             print(f"Deleted Tinybird Datasource {name}")
 
-def tb_replace_kafka_group_id(filename):
-    print(f"Generating new Kafka Group ID in {filename}...")
-    with open(filename, 'r') as file:
-        file_content = file.read()
+def tb_update_datasource_info(files, kafka_topic):
+    for filepath in files:
+        if 'raw.datasource' in filepath:
+            # Replace the Kafka Group ID in the definition files
+            filename = os.path.basename(filepath)
+            with open(filepath, 'r') as file:
+                file_content = file.read()
 
-    # Replace the KAFKA_GROUP_ID line
-    start_index = file_content.find("KAFKA_GROUP_ID '") + len("KAFKA_GROUP_ID '")
-    end_index = file_content.find("'", start_index)
-    old_group_id = file_content[start_index:end_index]
-    
-    # Generate new group_id with current unix time
-    new_group_id = old_group_id[:old_group_id.rfind("_")+1] + str(int(time.time()))
+            print(f"Generating new Kafka Group ID in {filename}...")
+            # Replace the KAFKA_GROUP_ID line
+            start_index = file_content.find("KAFKA_GROUP_ID '") + len("KAFKA_GROUP_ID '")
+            end_index = file_content.find("'", start_index)
+            old_group_id = file_content[start_index:end_index]
+            # Generate new group_id with current unix time
+            new_group_id = old_group_id[:old_group_id.rfind("_")+1] + str(int(time.time()))
+            file_content = file_content.replace(old_group_id, new_group_id)
+            print(f"Generated new Kafka Group ID: {new_group_id}")
 
-    file_content = file_content.replace(old_group_id, new_group_id)
+            # Ensure KAFKA_TOPIC is correct for database and table name
+            print(f"Updating Kafka Topic to {kafka_topic}...")
+            topic_start_index = file_content.find("KAFKA_TOPIC '") + len("KAFKA_TOPIC '")
+            topic_end_index = file_content.find("'", topic_start_index)
+            old_topic = file_content[topic_start_index:topic_end_index]
+            topics = [x for x in k_topic_list() if kafka_topic in x]
+            if len(topics) != 1:
+                raise Exception(f"Found {len(topics)} topics matching {kafka_topic}, expected 1.")
+            else:
+                print(f"Found Kafka Topic {topics[0]} matching {kafka_topic}")
+                new_topic = topics[0]
+            file_content = file_content.replace(old_topic, new_topic)
+            
+            # Fix KAFKA_AUTO_OFFSET_RESET as well
+            print(f"Updating Kafka Auto Offset Reset to {conf.CONFLUENT_OFFSET_RESET}...")
+            offset_start_index = file_content.find("KAFKA_AUTO_OFFSET_RESET '") + len("KAFKA_AUTO_OFFSET_RESET '")
+            offset_end_index = file_content.find("'", offset_start_index)
+            old_offset = file_content[offset_start_index:offset_end_index]
+            file_content = file_content.replace(old_offset, conf.CONFLUENT_OFFSET_RESET)
 
-    # Write the modified content back to the file
-    with open(filename, 'w') as file:
-        file.write(file_content)
+            # Fix KAFKA_CONNECTION_NAME
+            print(f"Updating Kafka Connection Name to {conf.TINYBIRD_CONFLUENT_CONNECTION_NAME}...")
+            connection_start_index = file_content.find("KAFKA_CONNECTION_NAME '") + len("KAFKA_CONNECTION_NAME '")
+            connection_end_index = file_content.find("'", connection_start_index)
+            old_connection = file_content[connection_start_index:connection_end_index]
+            file_content = file_content.replace(old_connection, conf.TINYBIRD_CONFLUENT_CONNECTION_NAME)
 
-    print(f"Generated new Kafka Group ID: {new_group_id}")
+            # Write the modified content back to the file
+            with open(filepath, 'w') as file:
+                file.write(file_content)
 
 def tb_upload_def_file(filepath):
     url = TB_BASE_URL + "datafiles"
@@ -380,17 +409,12 @@ def tb_get_def_files_for_db(source_db):
     print(f"Got {len(files_to_get)} Tinybird definitions for {source_db}.")
     return files_to_get
 
-def tb_upload_def_for_db(source_db):
+def tb_upload_def_for_db(files):
     # We deliberately use the Tinybird definition files here to replicate what a user would typically do in the CLI.
     # It avoids the hassle of converting the schemas and definitions into plain python objects to POST with requests.
-    print(f"Uploading Tinybird definitions for {source_db}...")
-    # Get listing of definition files
-    files_to_upload = tb_get_def_files_for_db(source_db)
-    # Replace the Kafka Group ID in the definition files
-    [tb_replace_kafka_group_id(filepath) for filepath in files_to_upload if 'raw.datasource' in filepath]
     # Upload files
-    _ = [tb_upload_def_file(filepath) for filepath in files_to_upload]
-    print(f"Uploaded {len(files_to_upload)} Tinybird definitions for {source_db}.")
+    _ = [tb_upload_def_file(filepath) for filepath in files]
+    print(f"Uploaded {len(files)} Tinybird definitions.")
 
 def tb_pipes_list():
     print(f"Listing Tinybird Pipes...")
@@ -416,7 +440,7 @@ def tb_pipes_delete(names):
             resp.raise_for_status()
             print(f"Deleted Tinybird Pipe {name}")
 
-def tb_clean_workspace(source_db):
+def tb_clean_workspace(source_db, include_connector=False):
     print(f"Cleaning Tinybird workspace for {source_db}...")
     files = tb_get_def_files_for_db(source_db)
     pipes_to_delete = [file for file in files if os.path.dirname(file) == './pipes']
@@ -447,6 +471,13 @@ def tb_clean_workspace(source_db):
     print(f"Found {len(tokens_to_remove)} Tinybird Tokens to remove for {source_db}.")
     # Do token removal
     _ = [tb_tokens_delete(token_name) for token_name in set(tokens_to_remove)]
+    if include_connector:
+        # Do Connectors
+        connector = tb_connection_get(name=conf.TINYBIRD_CONFLUENT_CONNECTION_NAME)
+        if connector:
+            tb_connection_delete(connector['id'])
+        else:
+            print(f"Tinybird Confluent Connection not found for name: {conf.TINYBIRD_CONFLUENT_CONNECTION_NAME}")
 
 def tb_get_token_names_from_pipes(pipes):
     token_names = []
@@ -544,9 +575,9 @@ def cflt_connector_list(cluster_name, env_name):
 
 def cflt_connector_delete(name, env_name, cluster_name):
     if name not in cflt_connector_list(cluster_name=cluster_name, env_name=env_name):
-        print(f"Confluent Cloud Connector with name {name} not found.")
+        print(f"Confluent Cloud Debezium Connector with name {name} not found.")
         return
-    print(f"Deleting Confluent Cloud Connector with name {name}...")
+    print(f"Deleting Confluent Cloud Debezium Connector with name {name}...")
     env_id = cache_cflt_env_id(env_name)
     cluster_id = cache_cflt_cluster_id(cluster_name=cluster_name, env_name=env_name)
     resp = requests.delete(
@@ -560,9 +591,9 @@ def cflt_connector_create(name, source_db, env_name, cluster_name):
     # The API response for this call can be obtuse, sending 500 for minor misconfigurations.
     # Therefore change carefully and test thoroughly.
     if name in cflt_connector_list(cluster_name=cluster_name, env_name=env_name):
-        print(f"Confluent Cloud Connector with name {name} already exists.")
+        print(f"Confluent Cloud Debezium Connector with name {name} already exists.")
         return
-    print(f"Creating Confluent Cloud Connector with name {name}...")
+    print(f"Creating Confluent Cloud Debezium Connector with name {name}...")
     env_id = cache_cflt_env_id(env_name)
     cluster_id = cache_cflt_cluster_id(cluster_name=cluster_name, env_name=env_name)
 
@@ -776,29 +807,30 @@ def test_connectivity(db_type):
 @click.option('--fetch-users', is_flag=True, help='Fetch and print the user table from source Database.')
 @click.option('--drop-table', is_flag=True, help='Drop the Users table from the source Database.')
 @click.option('--tb-clean', is_flag=True, help='Clean out the Tinybird Workspace of Pipeline resources.')
+@click.option('--tb-include-connector', is_flag=True, help='Also remove the shared Tinybird Confluent connector. Affects all source databases.')
 @click.option('--remove-pipeline', is_flag=True, help='Reset the pipeline. Will Drop source table, remove debezium connector, drop the topic, and clean the Tinybird workspace')
 @click.option('--create-pipeline', is_flag=True, help='Create the Pipeline. Will create the table, a few initial user events, create debezium connector and topic, and the Tinybird Confluent connection.')
-def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, tb_clean, remove_pipeline, create_pipeline):
+def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, tb_clean, tb_include_connector, remove_pipeline, create_pipeline):
     if source_db in ['PG', 'pg']:
         source_db = 'PG'
-        confluent_connection_name = 'PostgresCdcSourceConnector_0'
-        kafka_topic_name = f"{conf.PG_DATABASE}.public.{conf.USERS_TABLE_NAME}"
+        debezium_connector_name = conf.PG_CONFLUENT_CONNECTOR_NAME
+        kafka_topic_name = conf.PG_DEBEZIUM_KAFKA_TOPIC
         conn = pg_connect_db()
         db_table_create_func = pg_table_create
     elif source_db in ['MYSQL', 'mysql']:
         source_db = 'MYSQL'
-        confluent_connection_name = 'MySqlCdcSourceConnector_0'
-        kafka_topic_name = f"{conf.MYSQL_DB_NAME}.public.{conf.USERS_TABLE_NAME}"
+        debezium_connector_name = conf.MYSQL_CONFLUENT_CONNECTOR_NAME
+        kafka_topic_name = conf.MYSQL_DEBEZIUM_KAFKA_TOPIC
         conn = mysql_connect_db()
         db_table_create_func = mysql_table_create
     else:
         raise Exception(f"Invalid source_db: {source_db}")
     if remove_pipeline:
         print(f"Resetting the Tinybird pipeline from {source_db}...")
-        cflt_connector_delete(confluent_connection_name, env_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME)
+        cflt_connector_delete(name=debezium_connector_name, env_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME)
         k_topic_delete(kafka_topic_name)
         db_table_drop(conn, table_name=conf.USERS_TABLE_NAME)
-        tb_clean_workspace(source_db)
+        tb_clean_workspace(source_db=source_db, include_connector=tb_include_connector)
         print("Pipeline Removed.")
     elif tb_connect_kafka:
         tb_connection_create_kafka(
@@ -814,13 +846,18 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
     elif drop_table:
         db_table_drop(conn, table_name=conf.USERS_TABLE_NAME)
     elif tb_clean:
-        tb_clean_workspace(source_db)
+        tb_clean_workspace(source_db, include_connector=tb_include_connector)
     elif create_pipeline:
         db_table_create_func(conn, table_name=conf.USERS_TABLE_NAME)
-        cflt_connector_create(name=confluent_connection_name, source_db=source_db, env_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME)
+        cflt_connector_create(name=debezium_connector_name, source_db=source_db, env_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME)
         tb_ensure_kafka_connection()
         generate_events(conn, num_events=NUM_EVENTS, table_name=conf.USERS_TABLE_NAME)
-        tb_upload_def_for_db(source_db)       
+        # Get listing of definition files
+        files_to_upload = tb_get_def_files_for_db(source_db)
+        print(f"Updating local Tinybird definition files for {source_db}...")
+        tb_update_datasource_info(files_to_upload, kafka_topic_name)
+        print(f"Uploading Tinybird definition files for {source_db}...")
+        tb_upload_def_for_db(files_to_upload)       
     else:
         try:
             generate_events(conn, num_events=NUM_EVENTS, table_name=conf.USERS_TABLE_NAME)
