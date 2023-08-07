@@ -29,6 +29,9 @@ ADDRESS_UPDATE_PROBABILITY = 0.1
 NUM_EVENTS = 10
 LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'IT']
 
+PROPAGATION_TIMEOUT = 15  # seconds
+PROPAGATION_SLEEP_INTERVAL = 1  # seconds
+
 # Fake data generator
 fake = faker.Faker()
 
@@ -359,6 +362,7 @@ def tb_update_datasource_info(files, kafka_topic):
                 print(f"Found Kafka Topic {topics[0]} matching {kafka_topic}")
                 new_topic = topics[0]
             file_content = file_content.replace(old_topic, new_topic)
+            print(f"Updated Kafka Topic to {new_topic}")
             
             # Fix KAFKA_AUTO_OFFSET_RESET as well
             print(f"Updating Kafka Auto Offset Reset to {conf.CONFLUENT_OFFSET_RESET}...")
@@ -366,6 +370,7 @@ def tb_update_datasource_info(files, kafka_topic):
             offset_end_index = file_content.find("'", offset_start_index)
             old_offset = file_content[offset_start_index:offset_end_index]
             file_content = file_content.replace(old_offset, conf.CONFLUENT_OFFSET_RESET)
+            print(f"Updated Kafka Auto Offset Reset to {conf.CONFLUENT_OFFSET_RESET}")
 
             # Fix KAFKA_CONNECTION_NAME
             print(f"Updating Kafka Connection Name to {conf.TINYBIRD_CONFLUENT_CONNECTION_NAME}...")
@@ -373,6 +378,7 @@ def tb_update_datasource_info(files, kafka_topic):
             connection_end_index = file_content.find("'", connection_start_index)
             old_connection = file_content[connection_start_index:connection_end_index]
             file_content = file_content.replace(old_connection, conf.TINYBIRD_CONFLUENT_CONNECTION_NAME)
+            print(f"Updated Kafka Connection Name to {conf.TINYBIRD_CONFLUENT_CONNECTION_NAME}")
 
             # Write the modified content back to the file
             with open(filepath, 'w') as file:
@@ -425,6 +431,16 @@ def tb_pipes_list():
     resp.raise_for_status()
     print(f"Found {len(resp.json()['pipes'])} Tinybird Pipes.")
     return resp.json()['pipes']
+
+def tb_endpoint_fetch(endpoint_name):
+    # e.g. https://api.tinybird.co/v0/pipes/pg_users_api_rmt.json
+    print(f"Fetching Tinybird Endpoint {endpoint_name}...")
+    resp = requests.get(
+        TB_BASE_URL + f"pipes/{endpoint_name}",
+        headers={'Authorization': f'Bearer {conf.TINYBIRD_API_KEY}'}
+    )
+    resp.raise_for_status()
+    return resp.json()
 
 def tb_pipes_delete(names):
     pipes_list = tb_pipes_list()
@@ -653,13 +669,20 @@ def cflt_connector_create(name, source_db, env_name, cluster_name):
     resp.raise_for_status()
     print(f"Created Confluent Cloud Connector with name {name}")
 
+def db_get_column_names(conn, table_name):
+    cur = conn.cursor()
+    cur.execute(f'SELECT * FROM {table_name} LIMIT 0')
+    column_names = [desc[0] for desc in cur.description]
+    cur.close()
+    return column_names
+
 def generate_events(conn, num_events, table_name):
     print("Generating user events...")
     cur = conn.cursor()
 
     # Get schema information
     cur.execute(f'SELECT * FROM {table_name} LIMIT 0')
-    column_names = [desc[0] for desc in cur.description]
+    column_names = db_get_column_names(conn, table_name)
     cur.fetchall()
     deleted_index = column_names.index('deleted')
     email_verified_index = column_names.index('email_verified')
@@ -800,6 +823,51 @@ def test_connectivity(db_type):
     except Exception as e:
         print(f'Error connecting to Tinybird: {e}')
 
+def bool_to_int(row):
+    """Converts boolean values in a row to integers."""
+    return {k: int(v) if isinstance(v, bool) else v for k, v in row.items()}
+
+
+def compare_source_to_dest(source_conn, dest_endpoint):
+    dest_rest = tb_endpoint_fetch(dest_endpoint)
+    dest_data = dest_rest['data'] or []
+    if not dest_data:
+        print(f"Destination endpoint {dest_endpoint} is empty.")
+        return False
+
+    source_data = db_table_fetch(source_conn, conf.USERS_TABLE_NAME)
+    if not source_data:
+        print(f"Source table {conf.USERS_TABLE_NAME} is empty.")
+        return False
+    
+    # Convert to dicts for comparison
+    column_names = column_names = db_get_column_names(source_conn, conf.USERS_TABLE_NAME)
+    source_mapped = [dict(zip(column_names, tup)) for tup in source_data]
+    source_sorted = sorted(source_mapped, key=lambda x: x['id'])
+    dest_sorted = sorted(dest_data, key=lambda x: x['id'])
+
+    if len(source_sorted) != len(dest_sorted):
+        print(f"Source table {conf.USERS_TABLE_NAME} has {len(source_sorted)} rows, but destination endpoint {dest_endpoint} has {len(dest_sorted)} rows.")
+        return False
+    
+    for i in range(len(source_sorted)):
+        # Convert boolean values to integers
+        source_row_int = bool_to_int(source_sorted[i])
+        # Convert all values in source and dest to their string representation
+        source_row_str = {k: str(v) for k, v in source_row_int.items()}
+        dest_row_str = {k: str(v) for k, v in dest_sorted[i].items()}
+
+        if source_row_str != dest_row_str:
+            # Check by field
+            for field in source_row_str:
+                if source_row_str[field] != dest_row_str[field]:
+                    print(f"Row {i} differs in field {field}: {source_row_str[field]} (Type: {type(source_sorted[i][field])}) != {dest_row_str[field]} (Type: {type(dest_sorted[i][field])})")
+                    return False
+        
+    print(f"Source table {conf.USERS_TABLE_NAME} and destination endpoint {dest_endpoint} are identical.")
+    return True
+
+
 @click.command()
 @click.option('--test-connection', is_flag=True, help='Test connections only.')
 @click.option('--source-db', type=click.Choice(['PG', 'MYSQL']), default='PG', help='Source database type. Defaults to PG.')
@@ -810,22 +878,47 @@ def test_connectivity(db_type):
 @click.option('--tb-include-connector', is_flag=True, help='Also remove the shared Tinybird Confluent connector. Affects all source databases.')
 @click.option('--remove-pipeline', is_flag=True, help='Reset the pipeline. Will Drop source table, remove debezium connector, drop the topic, and clean the Tinybird workspace')
 @click.option('--create-pipeline', is_flag=True, help='Create the Pipeline. Will create the table, a few initial user events, create debezium connector and topic, and the Tinybird Confluent connection.')
-def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, tb_clean, tb_include_connector, remove_pipeline, create_pipeline):
+@click.option('--compare-tables', is_flag=True, help='Compare the source table to the destination endpoint.')
+def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, tb_clean, tb_include_connector, remove_pipeline, create_pipeline, compare_tables):
     if source_db in ['PG', 'pg']:
         source_db = 'PG'
         debezium_connector_name = conf.PG_CONFLUENT_CONNECTOR_NAME
-        kafka_topic_name = conf.PG_DEBEZIUM_KAFKA_TOPIC
+        # The Kafka Topic Name is generated by the Debezium connector using a fixed structure.
+        # See https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html
+        kafka_topic_name = f"{conf.PG_DATABASE}.public.{conf.USERS_TABLE_NAME}"
         conn = pg_connect_db()
+        users_api_endpoint = 'pg_users_api_rmt.json'
         db_table_create_func = pg_table_create
     elif source_db in ['MYSQL', 'mysql']:
         source_db = 'MYSQL'
         debezium_connector_name = conf.MYSQL_CONFLUENT_CONNECTOR_NAME
-        kafka_topic_name = conf.MYSQL_DEBEZIUM_KAFKA_TOPIC
+        # The Kafka Topic Name is generated by the Debezium connector using a fixed structure.
+        # See https://docs.confluent.io/cloud/current/connectors/cc-mysql-source-cdc-debezium.html
+        # Note that the documentation says 'schemaName' but that is actually just the database name in these configurations.
+        kafka_topic_name = f"{conf.MYSQL_DB_NAME}.{conf.MYSQL_DB_NAME}.{conf.USERS_TABLE_NAME}"
         conn = mysql_connect_db()
+        users_api_endpoint = 'mysql_users_api_pipe.json'
         db_table_create_func = mysql_table_create
     else:
         raise Exception(f"Invalid source_db: {source_db}")
-    if remove_pipeline:
+    if compare_tables:
+        if compare_source_to_dest(conn, users_api_endpoint):
+            timer_start = time.time()
+            generate_events(conn, num_events=NUM_EVENTS, table_name=conf.USERS_TABLE_NAME)
+            print(f'{NUM_EVENTS} events generated in {time.time() - timer_start} seconds.')
+
+            # Wait for events to propagate or until timeout
+            wait_start = time.time()
+            while not compare_source_to_dest(conn, users_api_endpoint):
+                if time.time() - wait_start > PROPAGATION_TIMEOUT:
+                    raise Exception("Timeout reached waiting for events to propagate.")
+                time.sleep(PROPAGATION_SLEEP_INTERVAL)
+            
+            total_elapsed = time.time() - timer_start
+            print(f'Events propagated in {round(total_elapsed, 2)} seconds.')
+        else:
+            raise Exception(f"Source table {conf.USERS_TABLE_NAME} and destination endpoint {users_api_endpoint} are not identical to start test.")
+    elif remove_pipeline:
         print(f"Resetting the Tinybird pipeline from {source_db}...")
         cflt_connector_delete(name=debezium_connector_name, env_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME)
         k_topic_delete(kafka_topic_name)
