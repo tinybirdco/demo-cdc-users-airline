@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 
-from modules import tb_functions
-from modules import cc_functions
-from modules import db_functions
-from modules import utils
+from modules import tb_functions # A collection of Tinybird function for managing resources. 
+from modules import cc_functions # A wrapper for the Confluent APIs. List environemnts and clusters, and creates the CDC Connector. 
+from modules import db_functions # Contains vanilla SQL queries and Postgres/MySQL-specific methods. 
+from modules import utils # Passes the conf.py details to the other modules. 
 
 import random
 import time
@@ -11,19 +11,19 @@ import faker
 import click
 from datetime import datetime
 
-
 config = utils.Config()
+MYSQL_ENDPOINT_NAME = 'mysql_users_api_pipe.json'
+PG_ENDPOINT_NAME = 'pg_users_api_rmt.json'
 
 # Demo Constants
+NUM_EVENTS = 10 # TODO: promote to configuration or script command-line option.
+
 INSERT_WEIGHT = 30
 UPDATE_WEIGHT = 60
 DELETE_WEIGHT = 10
 ADDRESS_UPDATE_PROBABILITY = 0.1
-NUM_EVENTS = 10
-LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'IT']
 
-MYSQL_ENDPOINT_NAME = 'mysql_users_api_pipe.json'
-PG_ENDPOINT_NAME = 'pg_users_api_rmt.json'
+LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'IT']
 
 # These should be create if not exists statements for the table
 PG_USERS_TABLE_CREATE = f'''
@@ -233,19 +233,28 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
         raise Exception(f"Invalid source_db: {source_db}")
     if compare_tables:
         if compare_source_to_dest(conn, users_api_endpoint):
-            timer_start = time.time()
+            # Mark start time.
+            start_time = time.time()
             generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
-            print(f'{NUM_EVENTS} events generated in {time.time() - timer_start} seconds.')
+            
+            # Mark event generation finish time.
+            generated_time = time.time()
+            generate_duration = generated_time - start_time
+            print(f'{NUM_EVENTS} events generated in {round(generated_time,2)} seconds.')
 
             # Wait for events to propagate or until timeout
-            wait_start = time.time()
             while not compare_source_to_dest(conn, users_api_endpoint):
-                if time.time() - wait_start > config.TIMEOUT_WAIT:
+                if time.time() - generated_time > config.TIMEOUT_WAIT:
                     raise Exception("Timeout reached waiting for events to propagate.")
                 time.sleep(config.SLEEP_WAIT)
+
+            # Mark propagation finish time.
+            progagated_time = time.time()
+            prograte_duration = progagated_time - generated_time 
+            total_duration = progagated_time - start_time
             
-            total_elapsed = time.time() - timer_start
-            print(f'Events propagated in {round(total_elapsed, 2)} seconds.')
+            print(f"{NUM_EVENTS} events created and propagated in {round(total_duration, 2)} seconds. Generation took {round(generate_duration,2)} seconds.")
+            print(f"Time from last database update to API Endpoint providing finalized data: {round(prograte_duration,2)}")
         else:
             print(f"Source table {config.USERS_TABLE_NAME} and destination endpoint {users_api_endpoint} are either empty or not identical.")
     elif remove_pipeline:
