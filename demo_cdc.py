@@ -3,24 +3,18 @@
 from modules import tb_functions
 from modules import cc_functions
 from modules import db_functions
+from modules import utils
 
-import os
 import random
-import glob
-import requests
 import time
 import faker
 import click
-import json
 from datetime import datetime
 
-# Sensitive information in external file to avoid Git tracking
-import conf
 
-# TINYBIRD CONSTANTS
-TB_BASE_URL = f"https://{conf.TINYBIRD_API_URI}.tinybird.co/v0/"
+config = utils.Config()
 
-# Datagen Constants
+# Demo Constants
 INSERT_WEIGHT = 30
 UPDATE_WEIGHT = 60
 DELETE_WEIGHT = 10
@@ -28,8 +22,8 @@ ADDRESS_UPDATE_PROBABILITY = 0.1
 NUM_EVENTS = 10
 LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'IT']
 
-PROPAGATION_TIMEOUT = 15  # seconds
-PROPAGATION_SLEEP_INTERVAL = 1  # seconds
+MYSQL_ENDPOINT_NAME = 'mysql_users_api_pipe.json'
+PG_ENDPOINT_NAME = 'pg_users_api_rmt.json'
 
 # Fake data generator
 fake = faker.Faker()
@@ -37,12 +31,7 @@ fake = faker.Faker()
 def generate_events(conn, num_events, table_name):
     print("Generating user events...")
     cur = conn.cursor()
-
-    # Get schema information
-    cur.execute(f'SELECT * FROM {table_name} LIMIT 0')
-    #column_names = db_get_column_names(conn, table_name)
-    column_names = cur.column_names
-    cur.fetchall()
+    column_names = db_functions.get_column_names(conn, table_name)
     deleted_index = column_names.index('deleted')
     email_verified_index = column_names.index('email_verified')
     onboarded_index = column_names.index('onboarded')
@@ -172,7 +161,7 @@ def test_connectivity(db_type):
 
     # Test Confluent Kafka connection
     try:
-        topics = k_topic_list()
+        topics = cc_functions.k_topic_list()
         print(f'Available topics: {len(topics)}')
     except Exception as e:
         print(f'Error connecting to Confluent Kafka: {e}')
@@ -182,10 +171,6 @@ def test_connectivity(db_type):
     except Exception as e:
         print(f'Error connecting to Tinybird: {e}')
 
-def bool_to_int(row):
-    """Converts boolean values in a row to integers."""
-    return {k: int(v) if isinstance(v, bool) else v for k, v in row.items()}
-
 def compare_source_to_dest(source_conn, dest_endpoint):
     dest_rest = tb_functions.endpoint_fetch(dest_endpoint)
     dest_data = dest_rest['data'] or []
@@ -193,24 +178,24 @@ def compare_source_to_dest(source_conn, dest_endpoint):
         print(f"Destination endpoint {dest_endpoint} is empty.")
         return False
 
-    source_data = db_functions.table_fetch(source_conn, conf.USERS_TABLE_NAME)
+    source_data = db_functions.table_fetch(source_conn, config.USERS_TABLE_NAME)
     if not source_data:
-        print(f"Source table {conf.USERS_TABLE_NAME} is empty.")
+        print(f"Source table {config.USERS_TABLE_NAME} is empty.")
         return False
     
     # Convert to dicts for comparison
-    column_names = column_names = db_functions.get_column_names(source_conn, conf.USERS_TABLE_NAME)
+    column_names = column_names = db_functions.get_column_names(source_conn, config.USERS_TABLE_NAME)
     source_mapped = [dict(zip(column_names, tup)) for tup in source_data]
     source_sorted = sorted(source_mapped, key=lambda x: x['id'])
     dest_sorted = sorted(dest_data, key=lambda x: x['id'])
 
     if len(source_sorted) != len(dest_sorted):
-        print(f"Source table {conf.USERS_TABLE_NAME} has {len(source_sorted)} rows, but destination endpoint {dest_endpoint} has {len(dest_sorted)} rows.")
+        print(f"Source table {config.USERS_TABLE_NAME} has {len(source_sorted)} rows, but destination endpoint {dest_endpoint} has {len(dest_sorted)} rows.")
         return False
     
     for i in range(len(source_sorted)):
         # Convert boolean values to integers
-        source_row_int = bool_to_int(source_sorted[i])
+        source_row_int = utils.bool_to_int(source_sorted[i])
         # Convert all values in source and dest to their string representation
         source_row_str = {k: str(v) for k, v in source_row_int.items()}
         dest_row_str = {k: str(v) for k, v in dest_sorted[i].items()}
@@ -222,7 +207,7 @@ def compare_source_to_dest(source_conn, dest_endpoint):
                     print(f"Row {i} differs in field {field}: {source_row_str[field]} (Type: {type(source_sorted[i][field])}) != {dest_row_str[field]} (Type: {type(dest_sorted[i][field])})")
                     return False
         
-    print(f"Source table {conf.USERS_TABLE_NAME} and destination endpoint {dest_endpoint} are identical.")
+    print(f"Source table {config.USERS_TABLE_NAME} and destination endpoint {dest_endpoint} are identical.")
     return True
 
 @click.command()
@@ -239,69 +224,64 @@ def compare_source_to_dest(source_conn, dest_endpoint):
 def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, tb_clean, tb_include_connector, remove_pipeline, create_pipeline, compare_tables):
     if source_db in ['PG', 'pg']:
         source_db = 'PG'
-        debezium_connector_name = conf.PG_CONFLUENT_CONNECTOR_NAME
-        # The Kafka Topic Name is generated by the Debezium connector using a fixed structure.
-        # See https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html
-        kafka_topic_name = f"{conf.PG_DATABASE}.public.{conf.USERS_TABLE_NAME}"
+        debezium_connector_name = config.PG_CONFLUENT_CONNECTOR_NAME
+        kafka_topic_name = config.PG_KAFKA_CDC_TOPIC
         conn = db_functions.pg_connect_db()
-        users_api_endpoint = 'pg_users_api_rmt.json'
+        users_api_endpoint = PG_ENDPOINT_NAME
         db_table_create_func = db_functions.pg_table_create
     elif source_db in ['MYSQL', 'mysql']:
         source_db = 'MYSQL'
-        debezium_connector_name = conf.MYSQL_CONFLUENT_CONNECTOR_NAME
-        # The Kafka Topic Name is generated by the Debezium connector using a fixed structure.
-        # See https://docs.confluent.io/cloud/current/connectors/cc-mysql-source-cdc-debezium.html
-        # Note that the documentation says 'schemaName' but that is actually just the database name in these configurations.
-        kafka_topic_name = f"{conf.MYSQL_DB_NAME}.{conf.MYSQL_DB_NAME}.{conf.USERS_TABLE_NAME}"
+        debezium_connector_name = config.MYSQL_CONFLUENT_CONNECTOR_NAME
+        kafka_topic_name = config.MYSQL_KAFKA_CDC_TOPIC
         conn = db_functions.mysql_connect_db()
-        users_api_endpoint = 'mysql_users_api_pipe.json' # TODO: elevate to conf.py.
+        users_api_endpoint = MYSQL_ENDPOINT_NAME
         db_table_create_func = db_functions.mysql_table_create
     else:
         raise Exception(f"Invalid source_db: {source_db}")
     if compare_tables:
         if compare_source_to_dest(conn, users_api_endpoint):
             timer_start = time.time()
-            generate_events(conn, num_events=NUM_EVENTS, table_name=conf.USERS_TABLE_NAME)
+            generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
             print(f'{NUM_EVENTS} events generated in {time.time() - timer_start} seconds.')
 
             # Wait for events to propagate or until timeout
             wait_start = time.time()
             while not compare_source_to_dest(conn, users_api_endpoint):
-                if time.time() - wait_start > PROPAGATION_TIMEOUT:
+                if time.time() - wait_start > config.TIMEOUT_WAIT:
                     raise Exception("Timeout reached waiting for events to propagate.")
-                time.sleep(PROPAGATION_SLEEP_INTERVAL)
+                time.sleep(config.SLEEP_WAIT)
             
             total_elapsed = time.time() - timer_start
             print(f'Events propagated in {round(total_elapsed, 2)} seconds.')
         else:
-            raise Exception(f"Source table {conf.USERS_TABLE_NAME} and destination endpoint {users_api_endpoint} are not identical to start test.")
+            print(f"Source table {config.USERS_TABLE_NAME} and destination endpoint {users_api_endpoint} are either empty or not identical.")
     elif remove_pipeline:
         print(f"Resetting the Tinybird pipeline from {source_db}...")
-        cc_functions.connector_delete(name=debezium_connector_name, env_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME)
+        cc_functions.connector_delete(name=debezium_connector_name, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME)
         cc_functions.k_topic_delete(kafka_topic_name)
-        db_functions.table_drop(conn, table_name=conf.USERS_TABLE_NAME)
+        db_functions.table_drop(conn, table_name=config.USERS_TABLE_NAME)
         tb_functions.clean_workspace(source_db=source_db, include_connector=tb_include_connector)
         print("Pipeline Removed.")
     elif tb_connect_kafka:
         tb_functions.connection_create_kafka(
-            kafka_bootstrap_servers=conf.CONFLUENT_BOOTSTRAP_SERVERS,
-            kafka_key=conf.CONFLUENT_UNAME,
-            kafka_secret=conf.CONFLUENT_SECRET,
-            kafka_connection_name=conf.TINYBIRD_CONFLUENT_CONNECTION_NAME,
+            kafka_bootstrap_servers=config.CONFLUENT_BOOTSTRAP_SERVERS,
+            kafka_key=config.CONFLUENT_UNAME,
+            kafka_secret=config.CONFLUENT_SECRET,
+            kafka_connection_name=config.TINYBIRD_CONFLUENT_CONNECTION_NAME,
         )
     elif test_connection:
         test_connectivity(source_db)
     elif fetch_users:
-        db_functions.table_print(conn, table_name=conf.USERS_TABLE_NAME)
+        db_functions.table_print(conn, table_name=config.USERS_TABLE_NAME)
     elif drop_table:
-        db_functions.table_drop(conn, table_name=conf.USERS_TABLE_NAME)
+        db_functions.table_drop(conn, table_name=config.USERS_TABLE_NAME)
     elif tb_clean:
         tb_functions.clean_workspace(source_db, include_connector=tb_functions.include_connector)
     elif create_pipeline:
-        db_table_create_func(conn, table_name=conf.USERS_TABLE_NAME)
-        cc_functions.connector_create(name=debezium_connector_name, source_db=source_db, env_name=conf.CONFLUENT_ENV_NAME, cluster_name=conf.CONFLUENT_CLUSTER_NAME)
+        db_table_create_func(conn, table_name=config.USERS_TABLE_NAME)
+        cc_functions.connector_create(name=debezium_connector_name, source_db=source_db, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME)
         tb_functions.ensure_kafka_connection()
-        generate_events(conn, num_events=NUM_EVENTS, table_name=conf.USERS_TABLE_NAME)
+        generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
         # Get listing of definition files
         files_to_upload = tb_functions.get_def_files_for_db(source_db)
         print(f"Updating local Tinybird definition files for {source_db}...")
@@ -310,7 +290,7 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
         tb_functions.upload_def_for_db(files_to_upload)       
     else:
         try:
-            generate_events(conn, num_events=NUM_EVENTS, table_name=conf.USERS_TABLE_NAME)
+            generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
             print(f'{NUM_EVENTS} events generated.')
         except Exception as e:
             print(f'Error: {e}')

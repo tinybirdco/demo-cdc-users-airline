@@ -3,24 +3,25 @@
 import psycopg2
 from psycopg2 import sql
 import mysql.connector
+from .utils import Config
 
 # Sensitive information in external file to avoid Git tracking
-import conf
+config = Config()
 
 def mysql_connect_db():
     print("Connecting to the MySQL database...")
     conn = mysql.connector.connect(
-        host=conf.MYSQL_HOST_URL,
-        port=conf.MYSQL_PORT,
-        user=conf.MYSQL_USERNAME,
-        password=conf.MYSQL_PASSWORD
+        host=config.MYSQL_HOST_URL,
+        port=config.MYSQL_PORT,
+        user=config.MYSQL_USERNAME,
+        password=config.MYSQL_PASSWORD
     )
     cur = conn.cursor()
-    print(f"Creating the {conf.MYSQL_DB_NAME} database if not exists...")
-    cur.execute(f"CREATE DATABASE IF NOT EXISTS {conf.MYSQL_DB_NAME}")
+    print(f"Creating the {config.MYSQL_DB_NAME} database if not exists...")
+    cur.execute(f"CREATE DATABASE IF NOT EXISTS {config.MYSQL_DB_NAME}")
     cur.fetchall()
     cur.close()
-    conn.database = conf.MYSQL_DB_NAME
+    conn.database = config.MYSQL_DB_NAME
     print(f"Connected to the MySQL database. id: {conn.connection_id}")
     return conn
 
@@ -59,10 +60,10 @@ def pg_connect_db():
     print("Connecting to the Postgres database...")
     # Connect to PostgreSQL
     conn = psycopg2.connect(
-        host=conf.PG_HOST_URL,
-        user=conf.PG_USERNAME,
-        password=conf.PG_PASSWORD,
-        dbname=conf.PG_DATABASE
+        host=config.PG_HOST_URL,
+        user=config.PG_USERNAME,
+        password=config.PG_PASSWORD,
+        dbname=config.PG_DATABASE
     )
     print("Connected to the Postgres database.")
     return conn
@@ -127,6 +128,6 @@ def get_column_names(conn, table_name):
     cur = conn.cursor()
     cur.execute(f'SELECT * FROM {table_name} LIMIT 0')
     column_names = [desc[0] for desc in cur.description]
+    cur.fetchall()
     cur.close()
     return column_names
-
