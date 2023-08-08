@@ -4,5 +4,4 @@ NODE Users_api_0
 SQL >
 
     SELECT * FROM mysql_users_mv FINAL
-    where deleted = false
     order by id

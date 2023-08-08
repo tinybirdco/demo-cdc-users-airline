@@ -20,7 +20,7 @@ ENGINE_SORTING_KEY "__timestamp"
 
 KAFKA_CONNECTION_NAME 'cluster_eu_cdc_demo'
 KAFKA_TOPIC 'postgres_cdc_demo.public.users'
-KAFKA_GROUP_ID 'postgres_cdc_demo.public.users_1691407663'
+KAFKA_GROUP_ID 'postgres_cdc_demo.public.users_1691486131'
 KAFKA_AUTO_OFFSET_RESET 'latest'
 KAFKA_STORE_RAW_VALUE 'False'
 KAFKA_STORE_HEADERS 'False'
