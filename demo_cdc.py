@@ -25,13 +25,46 @@ LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'IT']
 MYSQL_ENDPOINT_NAME = 'mysql_users_api_pipe.json'
 PG_ENDPOINT_NAME = 'pg_users_api_rmt.json'
 
+# These should be create if not exists statements for the table
+PG_USERS_TABLE_CREATE = f'''
+    CREATE TABLE IF NOT EXISTS {config.USERS_TABLE_NAME} (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100),
+        email VARCHAR(100),
+        address VARCHAR(100),
+        phone_number VARCHAR(50),
+        email_verified BOOLEAN DEFAULT FALSE,
+        onboarded BOOLEAN DEFAULT FALSE,
+        deleted BOOLEAN DEFAULT FALSE,
+        lang CHAR(2),
+        created_at TIMESTAMP,
+        updated_at TIMESTAMP
+    )
+    '''
+
+MYSQL_USERS_TABLE_CREATE = f'''
+    CREATE TABLE IF NOT EXISTS {config.USERS_TABLE_NAME} (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100),
+        email VARCHAR(100),
+        address VARCHAR(100),
+        phone_number VARCHAR(50),
+        email_verified BOOLEAN DEFAULT FALSE,
+        onboarded BOOLEAN DEFAULT FALSE,
+        deleted BOOLEAN DEFAULT FALSE,
+        lang CHAR(2),
+        created_at TIMESTAMP,
+        updated_at TIMESTAMP
+    )
+    '''
+
 # Fake data generator
 fake = faker.Faker()
 
 def generate_events(conn, num_events, table_name):
     print("Generating user events...")
     cur = conn.cursor()
-    column_names = db_functions.get_column_names(conn, table_name)
+    column_names = db_functions.table_column_names(conn, table_name)
     deleted_index = column_names.index('deleted')
     email_verified_index = column_names.index('email_verified')
     onboarded_index = column_names.index('onboarded')
@@ -117,48 +150,8 @@ def generate_events(conn, num_events, table_name):
     print("User events generated.")
 
 def test_connectivity(db_type):
-    # Test PostgreSQL connection
-    if db_type == 'PG':
-        try:
-            pg_conn = db_functions.pg_connect_db()
-            print('PostgreSQL connection successful.')
-            cur = pg_conn.cursor()
-
-            # Query to count the number of tables in the current database
-            query = """
-                SELECT COUNT(*) 
-                FROM information_schema.tables 
-                WHERE table_schema = 'public'
-            """
-            cur.execute(query)
-            num_tables = cur.fetchone()[0]
-
-            cur.close()
-            print(f'Number of tables in the database: {num_tables}')
-        except Exception as e:
-            print(f'Error connecting to PostgreSQL: {e}')
-    if db_type == 'MYSQL':
-        # Test MySQL connection
-        try:
-            mysql_conn = db_functions.mysql_connect_db()
-            print('MySQL connection successful.')
-            cur = mysql_conn.cursor()
-
-            # Query to count the number of tables in the current database
-            # This SQL statement works with MySQL
-            query = """
-                SELECT COUNT(*)
-                FROM information_schema.tables 
-                WHERE table_schema = DATABASE()
-            """
-            cur.execute(query)
-            num_tables = cur.fetchone()[0]
-
-            cur.close()
-            print(f'Number of tables in the MySQL database: {num_tables}')
-        except Exception as e:
-            print(f'Error connecting to MySQL: {e}')
-
+    # Test Database connection
+    db_functions.test_db_connection(db_type)
     # Test Confluent Kafka connection
     try:
         topics = cc_functions.k_topic_list()
@@ -184,7 +177,7 @@ def compare_source_to_dest(source_conn, dest_endpoint):
         return False
     
     # Convert to dicts for comparison
-    column_names = column_names = db_functions.get_column_names(source_conn, config.USERS_TABLE_NAME)
+    column_names = column_names = db_functions.table_column_names(source_conn, config.USERS_TABLE_NAME)
     source_mapped = [dict(zip(column_names, tup)) for tup in source_data]
     source_sorted = sorted(source_mapped, key=lambda x: x['id'])
     dest_sorted = sorted(dest_data, key=lambda x: x['id'])
@@ -228,14 +221,14 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
         kafka_topic_name = config.PG_KAFKA_CDC_TOPIC
         conn = db_functions.pg_connect_db()
         users_api_endpoint = PG_ENDPOINT_NAME
-        db_table_create_func = db_functions.pg_table_create
+        db_table_create_query = PG_USERS_TABLE_CREATE
     elif source_db in ['MYSQL', 'mysql']:
         source_db = 'MYSQL'
         debezium_connector_name = config.MYSQL_CONFLUENT_CONNECTOR_NAME
         kafka_topic_name = config.MYSQL_KAFKA_CDC_TOPIC
         conn = db_functions.mysql_connect_db()
         users_api_endpoint = MYSQL_ENDPOINT_NAME
-        db_table_create_func = db_functions.mysql_table_create
+        db_table_create_query = MYSQL_USERS_TABLE_CREATE
     else:
         raise Exception(f"Invalid source_db: {source_db}")
     if compare_tables:
@@ -278,7 +271,10 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
     elif tb_clean:
         tb_functions.clean_workspace(source_db, include_connector=tb_functions.include_connector)
     elif create_pipeline:
-        db_table_create_func(conn, table_name=config.USERS_TABLE_NAME)
+        db_functions.table_create(
+            conn,
+            table_name=config.USERS_TABLE_NAME,
+            query=db_table_create_query)
         cc_functions.connector_create(name=debezium_connector_name, source_db=source_db, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME)
         tb_functions.ensure_kafka_connection()
         generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
