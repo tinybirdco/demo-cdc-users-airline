@@ -240,7 +240,7 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
             # Mark event generation finish time.
             generated_time = time.time()
             generate_duration = generated_time - start_time
-            print(f'{NUM_EVENTS} events generated in {round(generated_time,2)} seconds.')
+            print(f'{NUM_EVENTS} events generated in {round(generate_duration,2)} seconds.')
 
             # Wait for events to propagate or until timeout
             while not compare_source_to_dest(conn, users_api_endpoint):
@@ -254,7 +254,7 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
             total_duration = progagated_time - start_time
             
             print(f"{NUM_EVENTS} events created and propagated in {round(total_duration, 2)} seconds. Generation took {round(generate_duration,2)} seconds.")
-            print(f"Time from last database update to API Endpoint providing finalized data: {round(prograte_duration,2)}")
+            print(f"Time from last database update to API Endpoint providing finalized data: {round(prograte_duration,2)} seconds.")
         else:
             print(f"Source table {config.USERS_TABLE_NAME} and destination endpoint {users_api_endpoint} are either empty or not identical.")
     elif remove_pipeline:
