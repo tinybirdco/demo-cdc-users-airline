@@ -23,7 +23,7 @@ ENGINE_SORTING_KEY "__timestamp"
 
 KAFKA_CONNECTION_NAME 'cluster_eu_airporter'
 KAFKA_TOPIC 'airporter_demo.airporter_demo.baggage'
-KAFKA_GROUP_ID 'airporter_demo.airporter_demo.baggage_1691603530'
+KAFKA_GROUP_ID 'airporter_demo.airporter_demo.baggage_1691608886'
 KAFKA_AUTO_OFFSET_RESET 'latest'
 KAFKA_STORE_RAW_VALUE 'False'
 KAFKA_STORE_HEADERS 'False'
