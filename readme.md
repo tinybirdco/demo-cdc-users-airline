@@ -61,11 +61,11 @@ pip install -r requirements.txt
 
 ##### Get the repo
 
-Clone this repo locally, and get ready to put the required information into ``conf.py``. This includes account keys and secrets, database details, and stream cluster name. To make changes, you will need `admin` rights or define a new user with CDC-related permissions. 
+Clone this repo locally, and get ready to put the required information into ``conf.py``. This includes account keys and secrets, database details, and stream cluster name.  
  
 #### [Database details](#database)
 
-Confirm your database server is ready to generate CDC events, and update configuration details if needed. Depending on the database server type, and the CDC connector used, different configuration settings may be required. 
+Confirm your database server is ready to generate CDC events, and update configuration details if needed. To make changes, you will need `admin` rights or define a new user with CDC-related permissions. Depending on the database server type, and the CDC connector used, different configuration settings may be required. 
 
 For the demo configuration, you will need your database connection details, including server host URL, username, and password. 
 
