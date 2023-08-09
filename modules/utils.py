@@ -9,22 +9,25 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def setup_logging(print_to_console=True):
     logger = logging.getLogger('airport_data_generator')
-    logger.setLevel(logging.DEBUG)  # Set log level to DEBUG to capture all logs
+    
+    if not logger.handlers:  # Check if the logger already has handlers
+        logger.setLevel(logging.DEBUG)  # Set log level to DEBUG to capture all logs
 
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
-    # File Handler for logs
-    file_handler = logging.FileHandler('data_generator.log')
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+        # File Handler for logs
+        file_handler = logging.FileHandler('data_generator.log')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
-    # If print_to_console is True, add a StreamHandler to print to console
-    if print_to_console:
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
+        # If print_to_console is True, add a StreamHandler to print to console
+        if print_to_console:
+            stream_handler = logging.StreamHandler()
+            stream_handler.setFormatter(formatter)
+            logger.addHandler(stream_handler)
 
     return logger
+
 
 class Config:
     _instance = None
