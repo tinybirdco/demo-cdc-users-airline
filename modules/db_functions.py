@@ -90,7 +90,6 @@ def table_create(conn, table_name, query):
         logger.info(f"Error creating table: {e}")
         conn.rollback()
 
-
 def table_fetch(conn, table_name):
     logger.info("Fetching the current list of users...")
     with conn.cursor() as cur:

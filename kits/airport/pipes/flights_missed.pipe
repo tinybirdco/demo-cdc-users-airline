@@ -1,0 +1,30 @@
+TOKEN "flights_missed_endpoint_read_2342" READ
+
+TOKEN "Dashboard_Read" READ
+
+NODE endpoint
+SQL >
+
+    %
+    SELECT
+        f.flight_number,
+        f.updated_at AS flight_updated_at,
+        f.passenger_count as booked_passengers,
+        COUNT(p.id) AS missed_passengers,
+        ROUND(100 * COUNT(p.id) / f.passenger_count, 2) AS missed_percentage
+    FROM
+        flights_latest f FINAL
+    JOIN
+        passengers_latest p FINAL
+        ON f.id = p.flight_id 
+    WHERE
+        p.status = 'notboarded'
+        {% if defined(flight_number) %}
+        AND flight_number =  {{String(flight_number)}}
+        {% end %}
+    GROUP BY
+        f.flight_number, f.updated_at, f.passenger_count
+    ORDER BY
+        f.updated_at DESC
+
+
