@@ -80,9 +80,9 @@ BAGGAGE_TABLE_CREATE_QUERY = f'''
 TABLES_TO_REPLICATE = [FLIGHTS_TABLE_NAME, PASSENGER_TABLE_NAME, BAGGAGE_TABLE_NAME]
 
 # All times in seconds as this is a fast simulation
-MAX_ACTIVE_FLIGHTS = 50
+MAX_ACTIVE_FLIGHTS = 100
 MIN_MISSED_FLIGHTS = 2
-MAX_MISSED_FLIGHTS = 5
+MAX_MISSED_FLIGHTS = 7
 NEW_FLIGHT_PERCENTAGE = 50
 MIN_PASSENGER_COUNT = 50
 MAX_PASSENGER_COUNT = 320
@@ -99,7 +99,7 @@ MIN_BOARDING_WAIT = 20
 START_BOARDING_PERCENTAGE = 20
 MAX_BOARDING_WAIT = 60
 MAX_CHECKIN_BATCH = .2 * MAX_PASSENGER_COUNT
-MAX_BOARDING_BATCH = .1 * MAX_PASSENGER_COUNT
+MAX_BOARDING_BATCH = .15 * MAX_PASSENGER_COUNT
 CLOSE_BOARDING_PERCENTAGE = 98
 BOARDING_DENIED_PERCENTAGE = 2
 START_DEPARTURE_PERCENTAGE = 20
@@ -327,7 +327,9 @@ def process_active_flights(conn):
     active_flights = get_active_flights(conn)
     logger.info(f"There are currently {len(active_flights)} of {MAX_ACTIVE_FLIGHTS} active flights.")
     
-    miss_rate_last_interval = tb_functions.endpoint_fetch('flights_missed_pct_minute.json')['data'][0]['flights_missed_pct']
+    data = tb_functions.endpoint_fetch('flights_missed_pct_minute.json')['data']
+    sorted_data = sorted(data, key=lambda x: x['time_interval'], reverse=True)
+    miss_rate_last_interval = sorted_data[0]['flights_missed_pct']
     
     create_new_flight = False
     if miss_rate_last_interval < MIN_MISSED_FLIGHTS:
