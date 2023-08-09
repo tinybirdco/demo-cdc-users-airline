@@ -5,11 +5,11 @@
   * [What the demo script does](#cdc-what-script-does)
 * [Getting started](#getting-started)
   * [Setting up the demo script](#setting-up-code)
-  * [Database server details](#databases)
-    * [Using MySQL]()
-    * [Using Postgres]()
-  * [Confluent Cloud]()
-  * [Tinybird]()
+  * [Database details](#databases)
+    * [MySQL server](#mysql)
+    * [Postgres server](#postgres)
+  * [Confluent Cloud](#confluent-cloud)
+  * [Tinybird](#tinybird)
 * [Using the demo script](#using-the-demo)
 * [Things to know](#things-to-know)
 * [Troubleshooting](#roubleshooting)
@@ -63,31 +63,13 @@ pip install -r requirements.txt
 
 Clone this repo locally, and get ready to put the required information into ``conf.py``. This includes account keys and secrets, database details, and stream cluster name. To make changes, you will need `admin` rights or define a new user with CDC-related permissions. 
  
-#### Database details
+#### [Database details](#database)
 
 Confirm your database server is ready to generate CDC events, and update configuration details if needed. Depending on the database server type, and the CDC connector used, different configuration settings may be required. 
 
 For the demo configuration, you will need your database connection details, including server host URL, username, and password. 
 
-##### Postgres server
-
-* This demo was developed with Confluent Cloud, and its Postgres CDC connector depends on the Postgres server `rds.logical_replication = 1` setting.  
-* See the [Confluent Postgres CDC Connector guide](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html) for more set-up and configuration details.  
-* If you are creating a Postgres database, this demo has been tested with Postgres 14 and 15. 
-
-Configuration details from `conf.py`:
-```
-# Postgres connection details
-PG_HOST_URL = ''  # e.g. postgres-cdc-demo.<myhost>.<myregion>.rds.amazonaws.com
-PG_USERNAME = 'postgres'  # e.g. postgres (Postgres default)
-PG_PASSWORD = ''  # e.g. MySecretPassword!
-PG_DATABASE = ''  # e.g. postgres_cdc_demo   #  Note the use of _ in the database name compared to the host name as it's used for several services and _ is allowed across all as a separator.
-PG_PORT = 5432  # e.g. 5432
-# The script will use the Confluent API and deploy a Postgres CDC Source Connector with this name. 
-PG_CONFLUENT_CONNECTOR_NAME = 'PostgresDbzmConnector_0'  # This is a simple friendly name, you can set it here for convenience. 
-```
-
-##### MySQL server
+##### [MySQL server](#mysql)
 
 * By default, the generation of CDC events is enabled. You can confirm that this feature is enabled with this query: `SHOW VARIABLES LIKE 'log_bin'`. If the `log_bin` is set to `ON`, you are all set. If not, update the value to `ON`. 
 * This demo was developed with Confluent Cloud, and its Postgres CDC connector requires that the MySQL `binlog_format` is set to `ROW`. Check the server setting with `SHOW VARIABLES LIKE 'binlog_format'` and update the value if needed.
@@ -105,7 +87,23 @@ MYSQL_PASSWORD = ''  # e.g. MySecretPassword!
 # The script will use the Confluent API and deploy a MySQL CDC Source Connector with this name. 
 MYSQL_CONFLUENT_CONNECTOR_NAME = 'MysqlDbzmConnector_0'  # This is a simple friendly name, you can set it here for convenience.
 ```
+##### [Postgres server](#postgres)
 
+* This demo was developed with Confluent Cloud, and its Postgres CDC connector depends on the Postgres server `rds.logical_replication = 1` setting.  
+* See the [Confluent Postgres CDC Connector guide](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html) for more set-up and configuration details.  
+* If you are creating a Postgres database, this demo has been tested with Postgres 14 and 15. 
+
+Configuration details from `conf.py`:
+```
+# Postgres connection details
+PG_HOST_URL = ''  # e.g. postgres-cdc-demo.<myhost>.<myregion>.rds.amazonaws.com
+PG_USERNAME = 'postgres'  # e.g. postgres (Postgres default)
+PG_PASSWORD = ''  # e.g. MySecretPassword!
+PG_DATABASE = ''  # e.g. postgres_cdc_demo   #  Note the use of _ in the database name compared to the host name as it's used for several services and _ is allowed across all as a separator.
+PG_PORT = 5432  # e.g. 5432
+# The script will use the Confluent API and deploy a Postgres CDC Source Connector with this name. 
+PG_CONFLUENT_CONNECTOR_NAME = 'PostgresDbzmConnector_0'  # This is a simple friendly name, you can set it here for convenience. 
+```
 ##### Updating database server configuration on AWS RDS
 
 On AWS RDS, server configuration are managed with parameter groups. 
@@ -115,7 +113,7 @@ On AWS RDS, server configuration are managed with parameter groups.
 3. Update setting to support CDC and your CDC Connector. 
 4. On the database 'Configuration' tab, set the parameter group to this updated group. 
 
-#### Confluent Cloud
+#### [Confluent Cloud](#confluent-cloud)
 If you don't already have a Confluent Cloud Environment and Kafka Cluster, you will need to create one.
 
 Your cluster will need to be able to connect to AWS RDS, so either make it publicly accessible or ensure that you create the right security rules on both sides.
@@ -137,7 +135,7 @@ CONFLUENT_CLOUD_KEY = ''  # This is your Confluent Cloud API key for your user a
 CONFLUENT_CLOUD_SECRET = ''  # This is your Confluent Cloud API secret for your user account, not to be confused with API keys for your Kafka Cluster.
 ```
 
-#### Tinybird
+#### [Tinybird](#tinybird)
 If you don't already have a Tinybird Workspace, you will need to create one.
 
 You can test if Tinybird can connect to your Confluent cluster by putting the connection details into the 'Add Datasource' interface in the UI - if it can connect it will retrieve a list of Topics on the cluster.
