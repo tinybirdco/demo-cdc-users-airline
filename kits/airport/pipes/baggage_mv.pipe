@@ -1,0 +1,22 @@
+NODE baggage_mv_0
+SQL >
+
+    SELECT
+        id,
+        updated_at,
+        created_at,
+        flight_id,
+        passenger_id,
+        weight,
+        status,
+        loaded_at,
+        offloaded_at
+    FROM baggage_raw
+
+TYPE materialized
+DATASOURCE baggage_latest
+ENGINE "ReplacingMergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(updated_at)"
+ENGINE_SORTING_KEY "id"
+ENGINE_VER "updated_at"
+

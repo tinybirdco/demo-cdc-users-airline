@@ -1,0 +1,373 @@
+2023-08-09 11:48:32,684 - INFO - Flight 158 created.
+2023-08-09 11:48:32,796 - INFO - Passenger 27961 did not board Flight 151.
+2023-08-09 11:48:32,838 - INFO - Baggage 39754 offloaded for Passenger 27961 from Flight 151.
+2023-08-09 11:48:32,857 - INFO - Baggage 39755 offloaded for Passenger 27961 from Flight 151.
+2023-08-09 11:48:32,878 - INFO - Passenger 27962 did not board Flight 151.
+2023-08-09 11:48:32,922 - INFO - Baggage 39756 offloaded for Passenger 27962 from Flight 151.
+2023-08-09 11:48:32,942 - INFO - Passenger 27963 did not board Flight 151.
+2023-08-09 11:48:32,985 - INFO - Baggage 39757 offloaded for Passenger 27963 from Flight 151.
+2023-08-09 11:48:33,006 - INFO - Passenger 27964 did not board Flight 151.
+2023-08-09 11:48:33,046 - INFO - Baggage 39758 offloaded for Passenger 27964 from Flight 151.
+2023-08-09 11:48:33,057 - INFO - Passenger 27965 did not board Flight 151.
+2023-08-09 11:48:33,104 - INFO - Baggage 39759 offloaded for Passenger 27965 from Flight 151.
+2023-08-09 11:48:33,126 - INFO - Passenger 27966 did not board Flight 151.
+2023-08-09 11:48:33,166 - INFO - Baggage 39760 offloaded for Passenger 27966 from Flight 151.
+2023-08-09 11:48:33,186 - INFO - Passenger 27967 did not board Flight 151.
+2023-08-09 11:48:33,226 - INFO - Baggage 39761 offloaded for Passenger 27967 from Flight 151.
+2023-08-09 11:48:33,246 - INFO - Passenger 27968 did not board Flight 151.
+2023-08-09 11:48:33,288 - INFO - Baggage 39762 offloaded for Passenger 27968 from Flight 151.
+2023-08-09 11:48:33,308 - INFO - Baggage 39763 offloaded for Passenger 27968 from Flight 151.
+2023-08-09 11:48:33,328 - INFO - Passenger 27969 did not board Flight 151.
+2023-08-09 11:48:33,372 - INFO - Baggage 39764 offloaded for Passenger 27969 from Flight 151.
+2023-08-09 11:48:33,394 - INFO - Passenger 27995 did not board Flight 151.
+2023-08-09 11:48:33,434 - INFO - Passenger 27996 did not board Flight 151.
+2023-08-09 11:48:33,476 - INFO - Baggage 39800 offloaded for Passenger 27996 from Flight 151.
+2023-08-09 11:48:33,499 - INFO - Baggage 39801 offloaded for Passenger 27996 from Flight 151.
+2023-08-09 11:48:33,521 - INFO - Passenger 27997 did not board Flight 151.
+2023-08-09 11:48:33,562 - INFO - Baggage 39802 offloaded for Passenger 27997 from Flight 151.
+2023-08-09 11:48:33,582 - INFO - Passenger 27998 did not board Flight 151.
+2023-08-09 11:48:33,624 - INFO - Baggage 39803 offloaded for Passenger 27998 from Flight 151.
+2023-08-09 11:48:33,646 - INFO - Baggage 39804 offloaded for Passenger 27998 from Flight 151.
+2023-08-09 11:48:33,668 - INFO - Passenger 28000 did not board Flight 151.
+2023-08-09 11:48:33,711 - INFO - Baggage 39806 offloaded for Passenger 28000 from Flight 151.
+2023-08-09 11:48:33,724 - INFO - Baggage 39807 offloaded for Passenger 28000 from Flight 151.
+2023-08-09 11:48:33,746 - INFO - Passenger 28001 did not board Flight 151.
+2023-08-09 11:48:33,788 - INFO - Baggage 39808 offloaded for Passenger 28001 from Flight 151.
+2023-08-09 11:48:33,810 - INFO - Passenger 28002 did not board Flight 151.
+2023-08-09 11:48:33,848 - INFO - Baggage 39809 offloaded for Passenger 28002 from Flight 151.
+2023-08-09 11:48:33,862 - INFO - Passenger 28003 did not board Flight 151.
+2023-08-09 11:48:33,904 - INFO - Baggage 39810 offloaded for Passenger 28003 from Flight 151.
+2023-08-09 11:48:33,926 - INFO - Passenger 28004 did not board Flight 151.
+2023-08-09 11:48:33,967 - INFO - Baggage 39811 offloaded for Passenger 28004 from Flight 151.
+2023-08-09 11:48:33,988 - INFO - Passenger 28005 did not board Flight 151.
+2023-08-09 11:48:34,030 - INFO - Baggage 39812 offloaded for Passenger 28005 from Flight 151.
+2023-08-09 11:48:34,050 - INFO - Passenger 28006 did not board Flight 151.
+2023-08-09 11:48:34,092 - INFO - Baggage 39813 offloaded for Passenger 28006 from Flight 151.
+2023-08-09 11:48:34,111 - INFO - Baggage 39814 offloaded for Passenger 28006 from Flight 151.
+2023-08-09 11:48:34,124 - INFO - Passenger 28008 did not board Flight 151.
+2023-08-09 11:48:34,166 - INFO - Baggage 39816 offloaded for Passenger 28008 from Flight 151.
+2023-08-09 11:48:34,182 - INFO - Baggage 39817 offloaded for Passenger 28008 from Flight 151.
+2023-08-09 11:48:34,202 - INFO - Passenger 28009 did not board Flight 151.
+2023-08-09 11:48:34,242 - INFO - Baggage 39818 offloaded for Passenger 28009 from Flight 151.
+2023-08-09 11:48:34,256 - INFO - Baggage 39819 offloaded for Passenger 28009 from Flight 151.
+2023-08-09 11:48:34,278 - INFO - Passenger 28010 did not board Flight 151.
+2023-08-09 11:48:34,320 - INFO - Baggage 39820 offloaded for Passenger 28010 from Flight 151.
+2023-08-09 11:48:34,340 - INFO - Passenger 28011 did not board Flight 151.
+2023-08-09 11:48:34,384 - INFO - Passenger 28012 did not board Flight 151.
+2023-08-09 11:48:34,416 - INFO - Baggage 39821 offloaded for Passenger 28012 from Flight 151.
+2023-08-09 11:48:34,436 - INFO - Passenger 28013 did not board Flight 151.
+2023-08-09 11:48:34,481 - INFO - Baggage 39822 offloaded for Passenger 28013 from Flight 151.
+2023-08-09 11:48:34,507 - INFO - Passenger 28014 did not board Flight 151.
+2023-08-09 11:48:34,550 - INFO - Baggage 39823 offloaded for Passenger 28014 from Flight 151.
+2023-08-09 11:48:34,570 - INFO - Passenger 28015 did not board Flight 151.
+2023-08-09 11:48:34,613 - INFO - Baggage 39824 offloaded for Passenger 28015 from Flight 151.
+2023-08-09 11:48:34,634 - INFO - Baggage 39825 offloaded for Passenger 28015 from Flight 151.
+2023-08-09 11:48:34,648 - INFO - Passenger 28016 did not board Flight 151.
+2023-08-09 11:48:34,690 - INFO - Baggage 39826 offloaded for Passenger 28016 from Flight 151.
+2023-08-09 11:48:34,710 - INFO - Baggage 39827 offloaded for Passenger 28016 from Flight 151.
+2023-08-09 11:48:34,731 - INFO - Passenger 28017 did not board Flight 151.
+2023-08-09 11:48:34,772 - INFO - Baggage 39828 offloaded for Passenger 28017 from Flight 151.
+2023-08-09 11:48:34,794 - INFO - Passenger 28018 did not board Flight 151.
+2023-08-09 11:48:34,833 - INFO - Baggage 39829 offloaded for Passenger 28018 from Flight 151.
+2023-08-09 11:48:34,849 - INFO - Passenger 28019 did not board Flight 151.
+2023-08-09 11:48:34,890 - INFO - Baggage 39830 offloaded for Passenger 28019 from Flight 151.
+2023-08-09 11:48:34,912 - INFO - Passenger 28020 did not board Flight 151.
+2023-08-09 11:48:34,946 - INFO - Baggage 39831 offloaded for Passenger 28020 from Flight 151.
+2023-08-09 11:48:34,968 - INFO - Baggage 39832 offloaded for Passenger 28020 from Flight 151.
+2023-08-09 11:48:34,989 - INFO - Passenger 28021 did not board Flight 151.
+2023-08-09 11:48:35,018 - INFO - Baggage 39833 offloaded for Passenger 28021 from Flight 151.
+2023-08-09 11:48:35,040 - INFO - Baggage 39834 offloaded for Passenger 28021 from Flight 151.
+2023-08-09 11:48:35,058 - INFO - Passenger 28022 did not board Flight 151.
+2023-08-09 11:48:35,097 - INFO - Baggage 39835 offloaded for Passenger 28022 from Flight 151.
+2023-08-09 11:48:35,118 - INFO - Passenger 28023 did not board Flight 151.
+2023-08-09 11:48:35,156 - INFO - Baggage 39836 offloaded for Passenger 28023 from Flight 151.
+2023-08-09 11:48:35,172 - INFO - Baggage 39837 offloaded for Passenger 28023 from Flight 151.
+2023-08-09 11:48:35,188 - INFO - Passenger 28024 did not board Flight 151.
+2023-08-09 11:48:35,218 - INFO - Baggage 39838 offloaded for Passenger 28024 from Flight 151.
+2023-08-09 11:48:35,234 - INFO - Passenger 28025 did not board Flight 151.
+2023-08-09 11:48:35,266 - INFO - Baggage 39839 offloaded for Passenger 28025 from Flight 151.
+2023-08-09 11:48:35,282 - INFO - Passenger 28026 did not board Flight 151.
+2023-08-09 11:48:35,320 - INFO - Baggage 39840 offloaded for Passenger 28026 from Flight 151.
+2023-08-09 11:48:35,336 - INFO - Passenger 28027 did not board Flight 151.
+2023-08-09 11:48:35,368 - INFO - Baggage 39841 offloaded for Passenger 28027 from Flight 151.
+2023-08-09 11:48:35,384 - INFO - Passenger 28028 did not board Flight 151.
+2023-08-09 11:48:35,416 - INFO - Baggage 39842 offloaded for Passenger 28028 from Flight 151.
+2023-08-09 11:48:35,432 - INFO - Baggage 39843 offloaded for Passenger 28028 from Flight 151.
+2023-08-09 11:48:35,450 - INFO - Passenger 28029 did not board Flight 151.
+2023-08-09 11:48:35,495 - INFO - Baggage 39844 offloaded for Passenger 28029 from Flight 151.
+2023-08-09 11:48:35,516 - INFO - Passenger 28030 did not board Flight 151.
+2023-08-09 11:48:35,548 - INFO - Baggage 39845 offloaded for Passenger 28030 from Flight 151.
+2023-08-09 11:48:35,564 - INFO - Passenger 28031 did not board Flight 151.
+2023-08-09 11:48:35,596 - INFO - Baggage 39846 offloaded for Passenger 28031 from Flight 151.
+2023-08-09 11:48:35,615 - INFO - Passenger 28032 did not board Flight 151.
+2023-08-09 11:48:35,651 - INFO - Baggage 39847 offloaded for Passenger 28032 from Flight 151.
+2023-08-09 11:48:35,665 - INFO - Passenger 28033 did not board Flight 151.
+2023-08-09 11:48:35,697 - INFO - Baggage 39848 offloaded for Passenger 28033 from Flight 151.
+2023-08-09 11:48:35,712 - INFO - Passenger 28034 did not board Flight 151.
+2023-08-09 11:48:35,743 - INFO - Baggage 39849 offloaded for Passenger 28034 from Flight 151.
+2023-08-09 11:48:35,758 - INFO - Baggage 39850 offloaded for Passenger 28034 from Flight 151.
+2023-08-09 11:48:35,776 - INFO - Passenger 28035 did not board Flight 151.
+2023-08-09 11:48:35,805 - INFO - Baggage 39851 offloaded for Passenger 28035 from Flight 151.
+2023-08-09 11:48:35,819 - INFO - Baggage 39852 offloaded for Passenger 28035 from Flight 151.
+2023-08-09 11:48:35,836 - INFO - Passenger 28036 did not board Flight 151.
+2023-08-09 11:48:35,868 - INFO - Baggage 39853 offloaded for Passenger 28036 from Flight 151.
+2023-08-09 11:48:35,883 - INFO - Baggage 39854 offloaded for Passenger 28036 from Flight 151.
+2023-08-09 11:48:35,899 - INFO - Passenger 28037 did not board Flight 151.
+2023-08-09 11:48:35,933 - INFO - Baggage 39855 offloaded for Passenger 28037 from Flight 151.
+2023-08-09 11:48:35,949 - INFO - Baggage 39856 offloaded for Passenger 28037 from Flight 151.
+2023-08-09 11:48:35,967 - INFO - Passenger 28250 did not board Flight 151.
+2023-08-09 11:48:35,995 - INFO - Baggage 40134 offloaded for Passenger 28250 from Flight 151.
+2023-08-09 11:48:36,010 - INFO - Baggage 40135 offloaded for Passenger 28250 from Flight 151.
+2023-08-09 11:48:36,034 - INFO - Passenger 28251 did not board Flight 151.
+2023-08-09 11:48:36,066 - INFO - Baggage 40136 offloaded for Passenger 28251 from Flight 151.
+2023-08-09 11:48:36,088 - INFO - Baggage 40137 offloaded for Passenger 28251 from Flight 151.
+2023-08-09 11:48:36,104 - INFO - Passenger 28252 did not board Flight 151.
+2023-08-09 11:48:36,140 - INFO - Baggage 40138 offloaded for Passenger 28252 from Flight 151.
+2023-08-09 11:48:36,156 - INFO - Passenger 28253 did not board Flight 151.
+2023-08-09 11:48:36,188 - INFO - Baggage 40139 offloaded for Passenger 28253 from Flight 151.
+2023-08-09 11:48:36,204 - INFO - Passenger 28254 did not board Flight 151.
+2023-08-09 11:48:36,230 - INFO - Baggage 40140 offloaded for Passenger 28254 from Flight 151.
+2023-08-09 11:48:36,244 - INFO - Baggage 40141 offloaded for Passenger 28254 from Flight 151.
+2023-08-09 11:48:36,256 - INFO - Passenger 28255 did not board Flight 151.
+2023-08-09 11:48:36,288 - INFO - Baggage 40142 offloaded for Passenger 28255 from Flight 151.
+2023-08-09 11:48:36,304 - INFO - Passenger 28256 did not board Flight 151.
+2023-08-09 11:48:36,334 - INFO - Baggage 40143 offloaded for Passenger 28256 from Flight 151.
+2023-08-09 11:48:36,351 - INFO - Passenger 28257 did not board Flight 151.
+2023-08-09 11:48:36,382 - INFO - Baggage 40144 offloaded for Passenger 28257 from Flight 151.
+2023-08-09 11:48:36,398 - INFO - Passenger 28258 did not board Flight 151.
+2023-08-09 11:48:36,429 - INFO - Passenger 28259 did not board Flight 151.
+2023-08-09 11:48:36,463 - INFO - Baggage 40145 offloaded for Passenger 28259 from Flight 151.
+2023-08-09 11:48:36,480 - INFO - Passenger 28261 did not board Flight 151.
+2023-08-09 11:48:36,515 - INFO - Baggage 40147 offloaded for Passenger 28261 from Flight 151.
+2023-08-09 11:48:36,528 - INFO - Passenger 28262 did not board Flight 151.
+2023-08-09 11:48:36,561 - INFO - Baggage 40148 offloaded for Passenger 28262 from Flight 151.
+2023-08-09 11:48:36,578 - INFO - Baggage 40149 offloaded for Passenger 28262 from Flight 151.
+2023-08-09 11:48:36,589 - INFO - Passenger 28263 did not board Flight 151.
+2023-08-09 11:48:36,619 - INFO - Passenger 28264 did not board Flight 151.
+2023-08-09 11:48:36,651 - INFO - Baggage 40150 offloaded for Passenger 28264 from Flight 151.
+2023-08-09 11:48:36,668 - INFO - Passenger 28265 did not board Flight 151.
+2023-08-09 11:48:36,700 - INFO - Passenger 28266 did not board Flight 151.
+2023-08-09 11:48:36,725 - INFO - Baggage 40151 offloaded for Passenger 28266 from Flight 151.
+2023-08-09 11:48:36,742 - INFO - Passenger 28267 did not board Flight 151.
+2023-08-09 11:48:36,771 - INFO - Baggage 40152 offloaded for Passenger 28267 from Flight 151.
+2023-08-09 11:48:36,789 - INFO - Passenger 28268 did not board Flight 151.
+2023-08-09 11:48:36,827 - INFO - Baggage 40153 offloaded for Passenger 28268 from Flight 151.
+2023-08-09 11:48:36,849 - INFO - Passenger 28269 did not board Flight 151.
+2023-08-09 11:48:36,881 - INFO - Baggage 40154 offloaded for Passenger 28269 from Flight 151.
+2023-08-09 11:48:36,904 - INFO - Passenger 28270 did not board Flight 151.
+2023-08-09 11:48:36,934 - INFO - Passenger 28271 did not board Flight 151.
+2023-08-09 11:48:36,966 - INFO - Baggage 40155 offloaded for Passenger 28271 from Flight 151.
+2023-08-09 11:48:36,982 - INFO - Passenger 28272 did not board Flight 151.
+2023-08-09 11:48:37,015 - INFO - Baggage 40156 offloaded for Passenger 28272 from Flight 151.
+2023-08-09 11:48:37,030 - INFO - Passenger 28273 did not board Flight 151.
+2023-08-09 11:48:37,068 - INFO - Baggage 40157 offloaded for Passenger 28273 from Flight 151.
+2023-08-09 11:48:37,084 - INFO - Passenger 28274 did not board Flight 151.
+2023-08-09 11:48:37,117 - INFO - Baggage 40158 offloaded for Passenger 28274 from Flight 151.
+2023-08-09 11:48:37,132 - INFO - Baggage 40159 offloaded for Passenger 28274 from Flight 151.
+2023-08-09 11:48:37,148 - INFO - Passenger 28275 did not board Flight 151.
+2023-08-09 11:48:37,182 - INFO - Baggage 40160 offloaded for Passenger 28275 from Flight 151.
+2023-08-09 11:48:37,204 - INFO - Passenger 28276 did not board Flight 151.
+2023-08-09 11:48:37,233 - INFO - Baggage 40161 offloaded for Passenger 28276 from Flight 151.
+2023-08-09 11:48:37,250 - INFO - Passenger 28277 did not board Flight 151.
+2023-08-09 11:48:37,281 - INFO - Baggage 40162 offloaded for Passenger 28277 from Flight 151.
+2023-08-09 11:48:37,298 - INFO - Baggage 40163 offloaded for Passenger 28277 from Flight 151.
+2023-08-09 11:48:37,314 - INFO - Passenger 28278 did not board Flight 151.
+2023-08-09 11:48:37,341 - INFO - Baggage 40164 offloaded for Passenger 28278 from Flight 151.
+2023-08-09 11:48:37,357 - INFO - Baggage 40165 offloaded for Passenger 28278 from Flight 151.
+2023-08-09 11:48:37,373 - INFO - Passenger 28279 did not board Flight 151.
+2023-08-09 11:48:37,403 - INFO - Baggage 40166 offloaded for Passenger 28279 from Flight 151.
+2023-08-09 11:48:37,420 - INFO - Passenger 28280 did not board Flight 151.
+2023-08-09 11:48:37,453 - INFO - Passenger 28281 did not board Flight 151.
+2023-08-09 11:48:37,482 - INFO - Baggage 40167 offloaded for Passenger 28281 from Flight 151.
+2023-08-09 11:48:37,498 - INFO - Passenger 28282 did not board Flight 151.
+2023-08-09 11:48:37,527 - INFO - Baggage 40168 offloaded for Passenger 28282 from Flight 151.
+2023-08-09 11:48:37,541 - INFO - Passenger 28283 did not board Flight 151.
+2023-08-09 11:48:37,571 - INFO - Baggage 40169 offloaded for Passenger 28283 from Flight 151.
+2023-08-09 11:48:37,588 - INFO - Passenger 28284 did not board Flight 151.
+2023-08-09 11:48:37,620 - INFO - Baggage 40170 offloaded for Passenger 28284 from Flight 151.
+2023-08-09 11:48:37,635 - INFO - Passenger 28285 did not board Flight 151.
+2023-08-09 11:48:37,666 - INFO - Baggage 40171 offloaded for Passenger 28285 from Flight 151.
+2023-08-09 11:48:37,681 - INFO - Passenger 28286 did not board Flight 151.
+2023-08-09 11:48:37,712 - INFO - Baggage 40172 offloaded for Passenger 28286 from Flight 151.
+2023-08-09 11:48:37,728 - INFO - Baggage 40173 offloaded for Passenger 28286 from Flight 151.
+2023-08-09 11:48:37,742 - INFO - Passenger 28287 did not board Flight 151.
+2023-08-09 11:48:37,772 - INFO - Baggage 40174 offloaded for Passenger 28287 from Flight 151.
+2023-08-09 11:48:37,787 - INFO - Passenger 28288 did not board Flight 151.
+2023-08-09 11:48:37,818 - INFO - Baggage 40175 offloaded for Passenger 28288 from Flight 151.
+2023-08-09 11:48:37,831 - INFO - Passenger 28289 did not board Flight 151.
+2023-08-09 11:48:37,860 - INFO - Baggage 40176 offloaded for Passenger 28289 from Flight 151.
+2023-08-09 11:48:37,877 - INFO - Passenger 28290 did not board Flight 151.
+2023-08-09 11:48:37,908 - INFO - Baggage 40177 offloaded for Passenger 28290 from Flight 151.
+2023-08-09 11:48:37,926 - INFO - Passenger 28291 did not board Flight 151.
+2023-08-09 11:48:37,955 - INFO - Baggage 40178 offloaded for Passenger 28291 from Flight 151.
+2023-08-09 11:48:37,969 - INFO - Passenger 28292 did not board Flight 151.
+2023-08-09 11:48:38,001 - INFO - Baggage 40179 offloaded for Passenger 28292 from Flight 151.
+2023-08-09 11:48:38,017 - INFO - Passenger 28293 did not board Flight 151.
+2023-08-09 11:48:38,048 - INFO - Baggage 40180 offloaded for Passenger 28293 from Flight 151.
+2023-08-09 11:48:38,064 - INFO - Baggage 40181 offloaded for Passenger 28293 from Flight 151.
+2023-08-09 11:48:38,080 - INFO - Passenger 28294 did not board Flight 151.
+2023-08-09 11:48:38,112 - INFO - Baggage 40182 offloaded for Passenger 28294 from Flight 151.
+2023-08-09 11:48:38,128 - INFO - Passenger 28296 did not board Flight 151.
+2023-08-09 11:48:38,160 - INFO - Baggage 40185 offloaded for Passenger 28296 from Flight 151.
+2023-08-09 11:48:38,176 - INFO - Passenger 28297 did not board Flight 151.
+2023-08-09 11:48:38,213 - INFO - Baggage 40186 offloaded for Passenger 28297 from Flight 151.
+2023-08-09 11:48:38,229 - INFO - Passenger 28298 did not board Flight 151.
+2023-08-09 11:48:38,261 - INFO - Baggage 40187 offloaded for Passenger 28298 from Flight 151.
+2023-08-09 11:48:38,271 - INFO - Baggage 40188 offloaded for Passenger 28298 from Flight 151.
+2023-08-09 11:48:38,288 - INFO - Passenger 28299 did not board Flight 151.
+2023-08-09 11:48:38,324 - INFO - Baggage 40189 offloaded for Passenger 28299 from Flight 151.
+2023-08-09 11:48:38,339 - INFO - Passenger 28300 did not board Flight 151.
+2023-08-09 11:48:38,368 - INFO - Baggage 40190 offloaded for Passenger 28300 from Flight 151.
+2023-08-09 11:48:38,383 - INFO - Baggage 40191 offloaded for Passenger 28300 from Flight 151.
+2023-08-09 11:48:38,400 - INFO - Passenger 28301 did not board Flight 151.
+2023-08-09 11:48:38,430 - INFO - Baggage 40192 offloaded for Passenger 28301 from Flight 151.
+2023-08-09 11:48:38,445 - INFO - Passenger 28302 did not board Flight 151.
+2023-08-09 11:48:38,478 - INFO - Baggage 40193 offloaded for Passenger 28302 from Flight 151.
+2023-08-09 11:48:38,493 - INFO - Passenger 28303 did not board Flight 151.
+2023-08-09 11:48:38,524 - INFO - Baggage 40194 offloaded for Passenger 28303 from Flight 151.
+2023-08-09 11:48:38,538 - INFO - Passenger 28304 did not board Flight 151.
+2023-08-09 11:48:38,569 - INFO - Baggage 40195 offloaded for Passenger 28304 from Flight 151.
+2023-08-09 11:48:38,583 - INFO - Passenger 28305 did not board Flight 151.
+2023-08-09 11:48:38,610 - INFO - Baggage 40196 offloaded for Passenger 28305 from Flight 151.
+2023-08-09 11:48:38,626 - INFO - Baggage 40197 offloaded for Passenger 28305 from Flight 151.
+2023-08-09 11:48:38,642 - INFO - Passenger 28306 did not board Flight 151.
+2023-08-09 11:48:38,676 - INFO - Baggage 40198 offloaded for Passenger 28306 from Flight 151.
+2023-08-09 11:48:38,692 - INFO - Passenger 28307 did not board Flight 151.
+2023-08-09 11:48:38,725 - INFO - Baggage 40199 offloaded for Passenger 28307 from Flight 151.
+2023-08-09 11:48:38,741 - INFO - Passenger 28308 did not board Flight 151.
+2023-08-09 11:48:38,778 - INFO - Baggage 40200 offloaded for Passenger 28308 from Flight 151.
+2023-08-09 11:48:38,794 - INFO - Baggage 40201 offloaded for Passenger 28308 from Flight 151.
+2023-08-09 11:48:38,810 - INFO - Passenger 28309 did not board Flight 151.
+2023-08-09 11:48:38,839 - INFO - Baggage 40202 offloaded for Passenger 28309 from Flight 151.
+2023-08-09 11:48:38,856 - INFO - Passenger 28310 did not board Flight 151.
+2023-08-09 11:48:38,884 - INFO - Baggage 40203 offloaded for Passenger 28310 from Flight 151.
+2023-08-09 11:48:38,902 - INFO - Passenger 28311 did not board Flight 151.
+2023-08-09 11:48:38,938 - INFO - Baggage 40204 offloaded for Passenger 28311 from Flight 151.
+2023-08-09 11:48:38,956 - INFO - Baggage 40205 offloaded for Passenger 28311 from Flight 151.
+2023-08-09 11:48:38,971 - INFO - Passenger 28313 did not board Flight 151.
+2023-08-09 11:48:39,004 - INFO - Baggage 40207 offloaded for Passenger 28313 from Flight 151.
+2023-08-09 11:48:39,019 - INFO - Passenger 28314 did not board Flight 151.
+2023-08-09 11:48:39,052 - INFO - Baggage 40208 offloaded for Passenger 28314 from Flight 151.
+2023-08-09 11:48:39,067 - INFO - Passenger 28315 did not board Flight 151.
+2023-08-09 11:48:39,098 - INFO - Baggage 40209 offloaded for Passenger 28315 from Flight 151.
+2023-08-09 11:48:39,118 - INFO - Baggage 40210 offloaded for Passenger 28315 from Flight 151.
+2023-08-09 11:48:39,131 - INFO - Passenger 28316 did not board Flight 151.
+2023-08-09 11:48:39,162 - INFO - Baggage 40211 offloaded for Passenger 28316 from Flight 151.
+2023-08-09 11:48:39,178 - INFO - Passenger 28317 did not board Flight 151.
+2023-08-09 11:48:39,210 - INFO - Baggage 40212 offloaded for Passenger 28317 from Flight 151.
+2023-08-09 11:48:39,226 - INFO - Baggage 40213 offloaded for Passenger 28317 from Flight 151.
+2023-08-09 11:48:39,242 - INFO - Passenger 28318 did not board Flight 151.
+2023-08-09 11:48:39,274 - INFO - Baggage 40214 offloaded for Passenger 28318 from Flight 151.
+2023-08-09 11:48:39,290 - INFO - Passenger 28319 did not board Flight 151.
+2023-08-09 11:48:39,322 - INFO - Baggage 40215 offloaded for Passenger 28319 from Flight 151.
+2023-08-09 11:48:39,338 - INFO - Baggage 40216 offloaded for Passenger 28319 from Flight 151.
+2023-08-09 11:48:39,353 - INFO - Passenger 28320 did not board Flight 151.
+2023-08-09 11:48:39,383 - INFO - Baggage 40217 offloaded for Passenger 28320 from Flight 151.
+2023-08-09 11:48:39,398 - INFO - Passenger 28321 did not board Flight 151.
+2023-08-09 11:48:39,425 - INFO - Baggage 40218 offloaded for Passenger 28321 from Flight 151.
+2023-08-09 11:48:39,439 - INFO - Passenger 28322 did not board Flight 151.
+2023-08-09 11:48:39,473 - INFO - Baggage 40219 offloaded for Passenger 28322 from Flight 151.
+2023-08-09 11:48:39,488 - INFO - Baggage 40220 offloaded for Passenger 28322 from Flight 151.
+2023-08-09 11:48:39,509 - INFO - Passenger 28323 did not board Flight 151.
+2023-08-09 11:48:39,543 - INFO - Baggage 40221 offloaded for Passenger 28323 from Flight 151.
+2023-08-09 11:48:39,559 - INFO - Passenger 28324 did not board Flight 151.
+2023-08-09 11:48:39,590 - INFO - Baggage 40222 offloaded for Passenger 28324 from Flight 151.
+2023-08-09 11:48:39,607 - INFO - Passenger 28325 did not board Flight 151.
+2023-08-09 11:48:39,644 - INFO - Baggage 40223 offloaded for Passenger 28325 from Flight 151.
+2023-08-09 11:48:39,654 - INFO - Baggage 40224 offloaded for Passenger 28325 from Flight 151.
+2023-08-09 11:48:39,674 - INFO - Passenger 28326 did not board Flight 151.
+2023-08-09 11:48:39,700 - INFO - Baggage 40225 offloaded for Passenger 28326 from Flight 151.
+2023-08-09 11:48:39,716 - INFO - Passenger 28327 did not board Flight 151.
+2023-08-09 11:48:39,752 - INFO - Baggage 40226 offloaded for Passenger 28327 from Flight 151.
+2023-08-09 11:48:39,768 - INFO - Passenger 28328 did not board Flight 151.
+2023-08-09 11:48:39,799 - INFO - Baggage 40227 offloaded for Passenger 28328 from Flight 151.
+2023-08-09 11:48:39,814 - INFO - Baggage 40228 offloaded for Passenger 28328 from Flight 151.
+2023-08-09 11:48:39,829 - INFO - Passenger 28329 did not board Flight 151.
+2023-08-09 11:48:39,862 - INFO - Baggage 40229 offloaded for Passenger 28329 from Flight 151.
+2023-08-09 11:48:39,878 - INFO - Passenger 28330 did not board Flight 151.
+2023-08-09 11:48:39,914 - INFO - Baggage 40230 offloaded for Passenger 28330 from Flight 151.
+2023-08-09 11:48:39,929 - INFO - Passenger 28331 did not board Flight 151.
+2023-08-09 11:48:39,962 - INFO - Baggage 40231 offloaded for Passenger 28331 from Flight 151.
+2023-08-09 11:48:39,980 - INFO - Baggage 40232 offloaded for Passenger 28331 from Flight 151.
+2023-08-09 11:48:39,996 - INFO - Passenger 28332 did not board Flight 151.
+2023-08-09 11:48:40,033 - INFO - Baggage 40233 offloaded for Passenger 28332 from Flight 151.
+2023-08-09 11:48:40,051 - INFO - Passenger 28333 did not board Flight 151.
+2023-08-09 11:48:40,083 - INFO - Passenger 28334 did not board Flight 151.
+2023-08-09 11:48:40,114 - INFO - Baggage 40234 offloaded for Passenger 28334 from Flight 151.
+2023-08-09 11:48:40,130 - INFO - Baggage 40235 offloaded for Passenger 28334 from Flight 151.
+2023-08-09 11:48:40,142 - INFO - Passenger 28335 did not board Flight 151.
+2023-08-09 11:48:40,178 - INFO - Baggage 40236 offloaded for Passenger 28335 from Flight 151.
+2023-08-09 11:48:40,194 - INFO - Baggage 40237 offloaded for Passenger 28335 from Flight 151.
+2023-08-09 11:48:40,206 - INFO - Passenger 28336 did not board Flight 151.
+2023-08-09 11:48:40,238 - INFO - Baggage 40238 offloaded for Passenger 28336 from Flight 151.
+2023-08-09 11:48:40,250 - INFO - Passenger 28337 did not board Flight 151.
+2023-08-09 11:48:40,282 - INFO - Baggage 40239 offloaded for Passenger 28337 from Flight 151.
+2023-08-09 11:48:40,298 - INFO - Passenger 28524 did not board Flight 151.
+2023-08-09 11:48:40,329 - INFO - Baggage 40481 offloaded for Passenger 28524 from Flight 151.
+2023-08-09 11:48:40,346 - INFO - Passenger 28697 did not board Flight 151.
+2023-08-09 11:48:40,377 - INFO - Baggage 40701 offloaded for Passenger 28697 from Flight 151.
+2023-08-09 11:48:40,394 - INFO - Passenger 28698 did not board Flight 151.
+2023-08-09 11:48:40,433 - INFO - Baggage 40702 offloaded for Passenger 28698 from Flight 151.
+2023-08-09 11:48:40,455 - INFO - Baggage 40703 offloaded for Passenger 28698 from Flight 151.
+2023-08-09 11:48:40,476 - INFO - Passenger 28699 did not board Flight 151.
+2023-08-09 11:48:40,519 - INFO - Baggage 40704 offloaded for Passenger 28699 from Flight 151.
+2023-08-09 11:48:40,531 - INFO - Passenger 28700 did not board Flight 151.
+2023-08-09 11:48:40,562 - INFO - Baggage 40705 offloaded for Passenger 28700 from Flight 151.
+2023-08-09 11:48:40,579 - INFO - Baggage 40706 offloaded for Passenger 28700 from Flight 151.
+2023-08-09 11:48:40,603 - INFO - Passenger 28701 did not board Flight 151.
+2023-08-09 11:48:40,638 - INFO - Baggage 40707 offloaded for Passenger 28701 from Flight 151.
+2023-08-09 11:48:40,653 - INFO - Passenger 28702 did not board Flight 151.
+2023-08-09 11:48:40,685 - INFO - Baggage 40708 offloaded for Passenger 28702 from Flight 151.
+2023-08-09 11:48:40,696 - INFO - Passenger 28703 did not board Flight 151.
+2023-08-09 11:48:40,722 - INFO - Baggage 40709 offloaded for Passenger 28703 from Flight 151.
+2023-08-09 11:48:40,738 - INFO - Passenger 28704 did not board Flight 151.
+2023-08-09 11:48:40,769 - INFO - Baggage 40710 offloaded for Passenger 28704 from Flight 151.
+2023-08-09 11:48:40,785 - INFO - Passenger 28705 did not board Flight 151.
+2023-08-09 11:48:40,973 - INFO - Flight 151 has concluded loading bags.
+2023-08-09 11:48:41,023 - INFO - Flight 151 has departed.
+2023-08-09 11:48:41,094 - INFO - Passenger 28038 did not board Flight 152.
+2023-08-09 11:48:41,126 - INFO - Baggage 39857 offloaded for Passenger 28038 from Flight 152.
+2023-08-09 11:48:41,143 - INFO - Baggage 39858 offloaded for Passenger 28038 from Flight 152.
+2023-08-09 11:48:41,158 - INFO - Passenger 28039 did not board Flight 152.
+2023-08-09 11:48:41,195 - INFO - Baggage 39859 offloaded for Passenger 28039 from Flight 152.
+2023-08-09 11:48:41,215 - INFO - Passenger 28041 did not board Flight 152.
+2023-08-09 11:48:41,258 - INFO - Baggage 39861 offloaded for Passenger 28041 from Flight 152.
+2023-08-09 11:48:41,274 - INFO - Passenger 28042 did not board Flight 152.
+2023-08-09 11:48:41,304 - INFO - Baggage 39862 offloaded for Passenger 28042 from Flight 152.
+2023-08-09 11:48:41,321 - INFO - Passenger 28043 did not board Flight 152.
+2023-08-09 11:48:41,356 - INFO - Baggage 39863 offloaded for Passenger 28043 from Flight 152.
+2023-08-09 11:48:41,371 - INFO - Baggage 39864 offloaded for Passenger 28043 from Flight 152.
+2023-08-09 11:48:41,388 - INFO - Passenger 28044 did not board Flight 152.
+2023-08-09 11:48:41,424 - INFO - Baggage 39865 offloaded for Passenger 28044 from Flight 152.
+2023-08-09 11:48:41,442 - INFO - Passenger 28046 did not board Flight 152.
+2023-08-09 11:48:41,476 - INFO - Baggage 39867 offloaded for Passenger 28046 from Flight 152.
+2023-08-09 11:48:41,494 - INFO - Passenger 28047 did not board Flight 152.
+2023-08-09 11:48:41,524 - INFO - Baggage 39868 offloaded for Passenger 28047 from Flight 152.
+2023-08-09 11:48:41,540 - INFO - Baggage 39869 offloaded for Passenger 28047 from Flight 152.
+2023-08-09 11:48:41,556 - INFO - Passenger 28048 did not board Flight 152.
+2023-08-09 11:48:41,592 - INFO - Baggage 39870 offloaded for Passenger 28048 from Flight 152.
+2023-08-09 11:48:41,607 - INFO - Passenger 28049 did not board Flight 152.
+2023-08-09 11:48:41,637 - INFO - Baggage 39871 offloaded for Passenger 28049 from Flight 152.
+2023-08-09 11:48:41,654 - INFO - Passenger 28050 did not board Flight 152.
+2023-08-09 11:48:41,685 - INFO - Baggage 39872 offloaded for Passenger 28050 from Flight 152.
+2023-08-09 11:48:41,702 - INFO - Passenger 28051 did not board Flight 152.
+2023-08-09 11:48:41,738 - INFO - Baggage 39873 offloaded for Passenger 28051 from Flight 152.
+2023-08-09 11:48:41,754 - INFO - Passenger 28052 did not board Flight 152.
+2023-08-09 11:48:41,783 - INFO - Baggage 39874 offloaded for Passenger 28052 from Flight 152.
+2023-08-09 11:48:41,797 - INFO - Passenger 28053 did not board Flight 152.
+2023-08-09 11:48:41,828 - INFO - Baggage 39875 offloaded for Passenger 28053 from Flight 152.
+2023-08-09 11:48:41,844 - INFO - Passenger 28054 did not board Flight 152.
+2023-08-09 11:48:41,879 - INFO - Baggage 39876 offloaded for Passenger 28054 from Flight 152.
+2023-08-09 11:48:41,896 - INFO - Baggage 39877 offloaded for Passenger 28054 from Flight 152.
+2023-08-09 11:48:41,912 - INFO - Passenger 28055 did not board Flight 152.
+2023-08-09 11:48:41,944 - INFO - Baggage 39878 offloaded for Passenger 28055 from Flight 152.
+2023-08-09 11:48:41,960 - INFO - Baggage 39879 offloaded for Passenger 28055 from Flight 152.
+2023-08-09 11:48:41,976 - INFO - Passenger 28056 did not board Flight 152.
+2023-08-09 11:48:42,007 - INFO - Baggage 39880 offloaded for Passenger 28056 from Flight 152.
+2023-08-09 11:48:42,024 - INFO - Passenger 28058 did not board Flight 152.
+2023-08-09 11:48:42,056 - INFO - Baggage 39882 offloaded for Passenger 28058 from Flight 152.
+2023-08-09 11:48:42,072 - INFO - Passenger 28059 did not board Flight 152.
+2023-08-09 11:48:42,104 - INFO - Passenger 28060 did not board Flight 152.
+2023-08-09 11:48:42,136 - INFO - Passenger 28061 did not board Flight 152.
+2023-08-09 11:48:42,167 - INFO - Baggage 39883 offloaded for Passenger 28061 from Flight 152.
+2023-08-09 11:48:42,184 - INFO - Baggage 39884 offloaded for Passenger 28061 from Flight 152.
