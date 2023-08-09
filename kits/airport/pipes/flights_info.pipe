@@ -1,0 +1,27 @@
+TOKEN "flights_info_endpoint_read_2196" READ
+
+TOKEN "Dashboard_Read" READ
+
+NODE endpoint
+SQL >
+
+    %
+    SELECT
+        flight_number,
+        passenger_count as passengers_booked,
+        status,
+        created_at as open_at,
+        closed_at,
+        boarding_at,
+        boarded_at,
+        departed_at
+    FROM flights_latest FINAL
+    where 1
+    {% if defined(flight_number) %}
+      AND flight_number =  {{String(flight_number)}}
+    {% end %}
+    {% if defined(flight_status) %}
+      AND status =  {{String(flight_status)}}
+    {% end %}
+
+

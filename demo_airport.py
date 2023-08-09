@@ -44,7 +44,8 @@ PASSENGER_TABLE_CREATE_QUERY = f'''
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         flight_id INT NOT NULL,
-        status ENUM('checkedin', 'onboarded', 'notboarded', 'departed', 'arrived', 'completed') NOT NULL,
+        status ENUM('idle', 'checkedin', 'onboarded', 'notboarded', 'departed', 'arrived', 'completed') NOT NULL,
+        checkedin_at DATETIME,
         onboarded_at DATETIME,
         notboarded_at DATETIME,
         departed_at DATETIME,
@@ -60,9 +61,10 @@ BAGGAGE_TABLE_CREATE_QUERY = f'''
     CREATE TABLE IF NOT EXISTS {BAGGAGE_TABLE_NAME} (
         id INT AUTO_INCREMENT PRIMARY KEY,
         passenger_id INT NOT NULL,
-        flight_id INT NOT NULL,
+        flight_id INT,
         weight DOUBLE NOT NULL,
-        status ENUM('checkedin', 'loaded', 'arrived', 'offloaded', 'missing', 'completed') NOT NULL,
+        status ENUM('idle', 'checkedin', 'loaded', 'arrived', 'offloaded', 'missing', 'completed') NOT NULL,
+        checkedin_at DATETIME,
         loaded_at DATETIME,
         arrived_at DATETIME,
         offloaded_at DATETIME,
@@ -84,6 +86,7 @@ MAX_MISSED_FLIGHTS = 5
 NEW_FLIGHT_PERCENTAGE = 50
 MIN_PASSENGER_COUNT = 50
 MAX_PASSENGER_COUNT = 320
+TARGET_PASSENGER_POOL = 5 * MAX_PASSENGER_COUNT
 MIN_BAGGAGE_WEIGHT = 5.0
 AVG_BAGGAGE_WEIGHT = 15.0
 STEP_BAGGAGE_WEIGHT = 3.0
@@ -95,7 +98,8 @@ CLOSE_FLIGHT_PERCENTAGE = 95
 MIN_BOARDING_WAIT = 20
 START_BOARDING_PERCENTAGE = 20
 MAX_BOARDING_WAIT = 60
-MAX_BOARDING_BATCH = 75
+MAX_CHECKIN_BATCH = .2 * MAX_PASSENGER_COUNT
+MAX_BOARDING_BATCH = .1 * MAX_PASSENGER_COUNT
 CLOSE_BOARDING_PERCENTAGE = 98
 BOARDING_DENIED_PERCENTAGE = 2
 START_DEPARTURE_PERCENTAGE = 20
@@ -127,7 +131,7 @@ def get_checked_in_passenger_count(conn, flight_id):
 
 def check_start_boarding(conn, flight):
     # Decides whether to commence boarding between a min and max time after the flight has closed
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     closed_at = flight['closed_at']
     elapsed_time = (current_time - closed_at).seconds
     if elapsed_time >= MAX_BOARDING_WAIT:
@@ -138,7 +142,7 @@ def check_start_boarding(conn, flight):
             start_boarding(conn, flight)
 
 def start_boarding(conn, flight):
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     with conn.cursor() as cursor:
         cursor.execute(f"UPDATE {FLIGHTS_TABLE_NAME} SET status='boarding', boarding_at=%s WHERE id=%s", (current_time, flight['id'],))
     conn.commit()
@@ -153,7 +157,7 @@ def check_conclude_boarding(conn, flight):
     boarding_opened_at = cursor.fetchone()[0]
 
     # Calculate elapsed time since boarding started
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     elapsed_time = (current_time - boarding_opened_at).seconds
     logger.info(f"Elapsed time since Flight {flight['id']} started boarding: {elapsed_time} seconds")
 
@@ -168,7 +172,7 @@ def check_conclude_boarding(conn, flight):
         conclude_boarding(conn, flight)
 
 def conclude_boarding(conn, flight):
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     with conn.cursor() as cursor:
         cursor.execute(f"UPDATE {FLIGHTS_TABLE_NAME} SET status='boarded', boarded_at=%s WHERE id=%s", (current_time, flight['id']))
     conn.commit()
@@ -196,13 +200,14 @@ def process_boarding(conn, flight):
     # Update the status of all chosen passengers in a single batch
     if passengers_to_board:
         placeholders = ', '.join(['%s'] * len(passengers_to_board))
-        cursor.execute(f"UPDATE {PASSENGER_TABLE_NAME} SET status='onboarded' WHERE id IN ({placeholders})", passengers_to_board)
+        current_time = datetime.utcnow()
+        cursor.execute(f"UPDATE {PASSENGER_TABLE_NAME} SET status='onboarded', onboarded_at=%s WHERE id IN ({placeholders})", [current_time] + passengers_to_board)
         conn.commit()
         logger.info(f"{len(passengers_to_board)} passengers boarded Flight {flight['id']} in this batch.")
 
 
 def conclude_checkin(conn, flight):
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     with conn.cursor() as cursor:
         cursor.execute(f"UPDATE {FLIGHTS_TABLE_NAME} SET status='closed', closed_at=%s WHERE id=%s", (current_time, flight['id']))
     conn.commit()
@@ -223,24 +228,26 @@ def process_checkin(conn, flight):
     remaining_seats = flight['passenger_count'] - checked_in_count
     logger.info(f"Flight {flight['id']} is {flight['status']} with {remaining_seats} remaining seats.")
     num_passengers_to_checkin = random.randint(1, remaining_seats)
+    checkin_batch = int(min(num_passengers_to_checkin, MAX_CHECKIN_BATCH))
 
     with conn.cursor() as cursor:
-        for _ in range(num_passengers_to_checkin):
-            name = fake.name()
-            cursor.execute(f"INSERT INTO {PASSENGER_TABLE_NAME} (name, flight_id, status) VALUES (%s, %s, %s)", (name, flight['id'], 'checkedin'))
-            passenger_id = cursor.lastrowid
-            
-            num_bags = round(random.gauss(AVG_BAGS_PER_PASSENGER, STEP_BAGS_PER_PASSENGER))
-            num_bags = max(0, min(num_bags, MAX_BAGS_PER_PASSENGER))
-            for _ in range(num_bags):
-                weight = random.gauss(AVG_BAGGAGE_WEIGHT, STEP_BAGGAGE_WEIGHT)
-                weight = round(max(MIN_BAGGAGE_WEIGHT, min(weight, MAX_BAGGAGE_WEIGHT)), 2)
-                cursor.execute(f"INSERT INTO {BAGGAGE_TABLE_NAME} (passenger_id, flight_id, weight, status) VALUES (%s, %s, %s, %s)", (passenger_id, flight['id'], weight, 'checkedin'))
+        # Select 'idle' passengers and limit them to the number we want to check-in
+        cursor.execute(f"SELECT id FROM {PASSENGER_TABLE_NAME} WHERE status='idle' LIMIT %s", (checkin_batch,))
+        passenger_ids = [row[0] for row in cursor.fetchall()]
+
+        if passenger_ids:
+            current_time = datetime.utcnow()
+            # Update passenger status to 'checkedin' and associate them with the flight using batch operation
+            passenger_ids_str = ",".join(map(str, passenger_ids))
+            cursor.execute(f"UPDATE {PASSENGER_TABLE_NAME} SET status='checkedin', flight_id=%s, checkedin_at=%s WHERE id IN ({passenger_ids_str})", (flight['id'], current_time))
+
+            # Update the status of the baggage to 'checkedin' and associate them with the flight using batch operation
+            cursor.execute(f"UPDATE {BAGGAGE_TABLE_NAME} SET status='checkedin', flight_id=%s, checkedin_at=%s WHERE passenger_id IN ({passenger_ids_str})", (flight['id'], current_time))
+
     conn.commit()
     timer_end = time.time()
     time_delta = timer_end - timer_start
-    logger.info(f"Checked in {num_passengers_to_checkin} passengers for Flight {flight['id']} in {round(time_delta,1)} seconds.")
-
+    logger.info(f"Checked in {len(passenger_ids)} passengers for Flight {flight['id']} in {round(time_delta,1)} seconds.")
 
 def process_notboarded_passengers(conn, flight):
     """Handles passengers that didn't board the flight, and their luggage."""
@@ -251,7 +258,7 @@ def process_notboarded_passengers(conn, flight):
     notboarded_passengers = [row[0] for row in cursor.fetchall()]
 
     # Step 2: Change their status to 'notboarded' in a batch
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     if notboarded_passengers:
         placeholders = ', '.join(['%s'] * len(notboarded_passengers))
         cursor.execute(f"UPDATE {PASSENGER_TABLE_NAME} SET status='notboarded', notboarded_at=%s WHERE id IN ({placeholders})", [current_time] + notboarded_passengers)
@@ -274,7 +281,7 @@ def conclude_load_bags(conn, flight):
     timer_start = time.time()
 
     # Update the status of bags belonging to onboarded passengers of the given flight to 'loaded'
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     with conn.cursor() as cursor:
         cursor.execute(f"""
             UPDATE {BAGGAGE_TABLE_NAME} 
@@ -291,24 +298,26 @@ def conclude_load_bags(conn, flight):
 
 def check_departure(conn, flight):
     """Decides whether to commence departure for the flight."""
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     elapsed_time = (current_time - flight['boarded_at']).seconds
 
     if elapsed_time >= MAX_DEPARTURE_WAIT:
-        logger.info(f"Flight {flight['id']} has waited {elapsed_time} seconds, exceeding maximum. Departing now.")
+        logger.info(f"Flight {flight['id']} has waited {elapsed_time} seconds, exceeding maximum. Commencing Departure.")
         start_departure(conn, flight)
     elif elapsed_time > MIN_DEPARTURE_WAIT:
         # Decide to start departure based on the percentage
         if random.randint(1, 100) <= START_DEPARTURE_PERCENTAGE:
-            logger.info(f"Flight {flight['id']} has waited {elapsed_time} seconds, passing minimum. Departing now.")
+            logger.info(f"Flight {flight['id']} has waited {elapsed_time} seconds, passing minimum. Commencing Departure.")
             start_departure(conn, flight)
 
 def start_departure(conn, flight):
     """Marks the flight as departed."""
+    process_notboarded_passengers(conn, flight)
+    conclude_load_bags(conn, flight)
     cursor = conn.cursor()
 
     # Update the flight status to 'departed' and set the departed_at timestamp
-    current_time = datetime.now()
+    current_time = datetime.utcnow()
     cursor.execute(f"UPDATE {FLIGHTS_TABLE_NAME} SET status='departed', departed_at=%s WHERE id=%s", (current_time, flight['id']))
     conn.commit()
 
@@ -336,11 +345,68 @@ def process_active_flights(conn):
     else:
         logger.info("No new flight created.")
 
+def process_passenger_pool(conn):
+    with conn.cursor() as cursor:
+        
+        cursor.execute(f"SELECT COUNT(*) FROM {PASSENGER_TABLE_NAME} WHERE status='idle'")
+        idle_count = cursor.fetchone()[0]
+
+        passengers_to_generate = max(0, TARGET_PASSENGER_POOL - idle_count)
+        logger.info(f"Passenger pool has {idle_count} idle passengers. Requesting {passengers_to_generate} new idle passengers.")
+        generate_passengers(conn, passengers_to_generate)
+
+def generate_passengers(conn, passengers_to_generate):
+    """Generate new passengers with an 'idle' status and their associated luggage."""
+    with conn.cursor() as cursor:
+        passenger_values = []
+        baggage_values = []
+        bag_counts = []  # List to store the number of bags for each passenger
+
+        for _ in range(passengers_to_generate):
+            name = fake.name()
+            passenger_values.append((name, 'idle'))
+
+            num_bags = round(random.gauss(AVG_BAGS_PER_PASSENGER, STEP_BAGS_PER_PASSENGER))
+            num_bags = max(0, min(num_bags, MAX_BAGS_PER_PASSENGER))
+            bag_counts.append(num_bags)
+
+            for _ in range(num_bags):
+                weight = random.gauss(AVG_BAGGAGE_WEIGHT, STEP_BAGGAGE_WEIGHT)
+                weight = round(max(MIN_BAGGAGE_WEIGHT, min(weight, MAX_BAGGAGE_WEIGHT)), 2)
+                baggage_values.append((None, weight, 'idle'))
+
+        # Batch insert passengers
+        cursor.executemany(f"INSERT INTO {PASSENGER_TABLE_NAME} (name, status) VALUES (%s, %s)", passenger_values)
+
+        # Get the starting id of the inserted passengers
+        start_id = cursor.lastrowid
+
+        # Update passenger_id placeholders in baggage_values
+        current_passenger_id = start_id
+        current_bag_count = 0
+        passenger_index = 0  # Index to track the current passenger in the bag_counts list
+
+        for i, baggage_tuple in enumerate(baggage_values):
+            baggage_values[i] = (current_passenger_id,) + baggage_tuple[1:]
+            
+            current_bag_count += 1
+            if current_bag_count >= bag_counts[passenger_index]:
+                current_passenger_id += 1
+                passenger_index += 1
+                current_bag_count = 0
+
+        # Batch insert luggage
+        cursor.executemany(f"INSERT INTO {BAGGAGE_TABLE_NAME} (passenger_id, weight, status) VALUES (%s, %s, %s)", baggage_values)
+
+    conn.commit()
+    logger.info(f"Generated {passengers_to_generate} new passengers with {len(baggage_values)} pieces of luggage.")
+
 
 def generate_events(conn):
     logger.info("Starting the event generation loop...")
     while True:
         loop_start_time = time.time()
+        process_passenger_pool(conn)
         process_active_flights(conn)
         active_flights = get_active_flights(conn)
         for flight in active_flights:
@@ -353,8 +419,6 @@ def generate_events(conn):
                 process_boarding(conn, flight)
                 check_conclude_boarding(conn, flight)
             elif flight['status'] == 'boarded':
-                process_notboarded_passengers(conn, flight)
-                conclude_load_bags(conn, flight)
                 check_departure(conn, flight)
             elif flight['status'] == 'departed':
                 pass

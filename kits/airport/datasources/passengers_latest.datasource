@@ -6,7 +6,10 @@ SCHEMA >
     `created_at` DateTime,
     `flight_id` Int16,
     `name` String,
-    `status` String
+    `status` String,
+    `checkedin_at` Nullable(DateTime),
+    `onboarded_at` Nullable(DateTime),
+    `notboarded_at` Nullable(DateTime)
 
 ENGINE "ReplacingMergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(updated_at)"

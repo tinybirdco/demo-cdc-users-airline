@@ -9,6 +9,7 @@ SQL >
         passenger_id,
         weight,
         status,
+        checkedin_at,
         loaded_at,
         offloaded_at
     FROM baggage_raw

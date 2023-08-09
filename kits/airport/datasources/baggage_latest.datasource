@@ -8,6 +8,7 @@ SCHEMA >
     `passenger_id` Int32,
     `weight` Float64,
     `status` String,
+    `checkedin_at` Nullable(DateTime),
     `loaded_at` Nullable(DateTime),
     `offloaded_at` Nullable(DateTime)
 
