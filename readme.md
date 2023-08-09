@@ -2,7 +2,7 @@
 
 #### Table of contents
 * [Introduction](#cdc-intro)
-  * [What the script does](#cdc-what-script-does)
+  * [What the demo script does](#cdc-what-script-does)
 * [Getting started](#getting-started)
   * [Setting up the demo script](#setting-up-code)
   * [Database server details](#databases)
@@ -25,7 +25,7 @@ This repo walks through learning how to replicate a transactional table into Tin
 * This script was developed with Confluent Cloud and its APIs.  Any cloud provider with a Debezium-based connector should work with CDC processing, but this demo script exercises Confluent APIs for creating and deleting CDC connectors. 
 * The combination of the source database (user) ``id`` column and a last updated timestamp ``updated_at`` shows how Tinybird can quickly and easily reconstruct the table.
 
-### [What the script does](#cdc-what-script-does) 
+### [What the demo script does](#cdc-what-script-does) 
 
 * Ensures that a connection can be made to the Source database server. 
 * Ensures a table with the configured name exists, and creates it if needed. 
@@ -61,43 +61,59 @@ pip install -r requirements.txt
 
 ##### Get the repo
 
-Clone this repo locally, and get ready to put the required information into ``conf.py``. This includes account keys and secrets, database details, and stream cluster name.  
-
+Clone this repo locally, and get ready to put the required information into ``conf.py``. This includes account keys and secrets, database details, and stream cluster name. To make changes, you will need `admin` rights or define a new user with CDC-related permissions. 
+ 
 #### Database details
 
-Confirm your database server is ready to generate CDC events. Depending on the database server type, and the CDC connector used, different configuration settings are required. 
+Confirm your database server is ready to generate CDC events, and update configuration details if needed. Depending on the database server type, and the CDC connector used, different configuration settings may be required. 
 
-##### Using Postgres
+For the demo configuration, you will need your database connection details, including server host URL, username, and password. 
+
+##### Postgres server
+
+* This demo was developed with Confluent Cloud, and its Postgres CDC connector depends on the Postgres server `rds.logical_replication = 1` setting.  
+* See the [Confluent Postgres CDC Connector guide](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html) for more set-up and configuration details.  
+* If you are creating a Postgres database, this demo has been tested with Postgres 14 and 15. 
+
+Configuration details from `conf.py`:
+```
+# Postgres connection details
+PG_HOST_URL = ''  # e.g. postgres-cdc-demo.<myhost>.<myregion>.rds.amazonaws.com
+PG_USERNAME = 'postgres'  # e.g. postgres (Postgres default)
+PG_PASSWORD = ''  # e.g. MySecretPassword!
+PG_DATABASE = ''  # e.g. postgres_cdc_demo   #  Note the use of _ in the database name compared to the host name as it's used for several services and _ is allowed across all as a separator.
+PG_PORT = 5432  # e.g. 5432
+# The script will use the Confluent API and deploy a Postgres CDC Source Connector with this name. 
+PG_CONFLUENT_CONNECTOR_NAME = 'PostgresDbzmConnector_0'  # This is a simple friendly name, you can set it here for convenience. 
+```
+
+##### MySQL server
+
+* By default, the generation of CDC events is enabled. You can confirm that this feature is enabled with this query: `SHOW VARIABLES LIKE 'log_bin'`. If the `log_bin` is set to `ON`, you are all set. If not, update the value to `ON`. 
+* This demo was developed with Confluent Cloud, and its Postgres CDC connector requires that the MySQL `binlog_format` is set to `ROW`. Check the server setting with `SHOW VARIABLES LIKE 'binlog_format'` and update the value if needed.
+* Set `binlog_row_image=full` as well.
+* See the [Confluent MySQL CDC Connector guide](https://docs.confluent.io/cloud/current/connectors/cc-mysql-source-cdc-debezium.html) for more set-up and configuration details.  
+
+Configuration details from `conf.py`:
+```
+# MySQL connection details
+MYSQL_HOST_URL = ''   # e.g. mysql-cdc-demo.<myhost>.<myregion>.rds.amazonaws.com
+MYSQL_PORT = 3306  # e.g. 3306
+MYSQL_DB_NAME = ''  # e.g. mysql_cdc_demo. Again note the use of _.
+MYSQL_USERNAME = 'admin'  # e.g. admin
+MYSQL_PASSWORD = ''  # e.g. MySecretPassword!
+# The script will use the Confluent API and deploy a MySQL CDC Source Connector with this name. 
+MYSQL_CONFLUENT_CONNECTOR_NAME = 'MysqlDbzmConnector_0'  # This is a simple friendly name, you can set it here for convenience.
+```
+
+##### Updating database server configuration on AWS RDS
+
+On AWS RDS, server configuration are managed with parameter groups. 
 
 1. Access RDS via the AWS Console
-2. Create Parameter group
-Name / description / family: postgres14
-
-3. Edit the param group, set these values:
-rds.logical_replication = 1
-
-4. Create the Database.
-Postgres 14
-Use the param group via additional options.
-Make it publicly available in the network security group.
-
-5. Get the connectivity information
-Once the Database is deployed (it'll take a few minutes)
-Grab the Postgres connection details and put them into conf.py
-
-##### Using MySQL
-
-Setting up MySQL follows much the same steps as Postgres above, with some variations detailed below.
-
-When you create the parameter group in RDS, ensure that you do not select Aurora-Mysql, but plain MySQL (using 5.7 here)
-
-The parameters to set for MySQL are:
-binlog_format=ROW
-binlog_row_image=full
-
-You must enable Backups as well.
-
-Grab the connectivity information and put it into conf.py
+2. Create a new parameter group.
+3. Update setting to support CDC and your CDC Connector. 
+4. On the database 'Configuration' tab, set the parameter group to this updated group. 
 
 #### Confluent Cloud
 If you don't already have a Confluent Cloud Environment and Kafka Cluster, you will need to create one.
@@ -106,11 +122,33 @@ Your cluster will need to be able to connect to AWS RDS, so either make it publi
 
 Likewise, Tinybird will need to be able to connect to Confluent, so ensure it is available to Tinybird as well.
 
+Configuration details from `conf.py`:
+```
+# Confluent Cloud Cluster connection details
+CONFLUENT_ENV_NAME = 'default'  # e.g. default. This is the name of the environment you created in Confluent Cloud, it defaults to 'default'.
+CONFLUENT_CLUSTER_NAME = ''  # e.g. cluster_eu. This name will also be used in Tinybird as the connection name.
+CONFLUENT_BOOTSTRAP_SERVERS = ''  # e.g. <clusterId>.<myregion>.<myprovider>.confluent.cloud:9092
+CONFLUENT_UNAME = ''  # This is your Confluent Key from your authentication details for the cluster. Not to be confused with your Confluent Cloud API key.
+CONFLUENT_SECRET = ''  # This is your Confluent Secret from your Auth details. Not to be confused with your Confluent Cloud API secret.
+CONFLUENT_OFFSET_RESET = 'latest'  # e.g. latest. This is the offset to start reading from the topic. It defaults to latest.
+
+# Confluent Cloud API connection details
+CONFLUENT_CLOUD_KEY = ''  # This is your Confluent Cloud API key for your user account, not to be confused with API keys for your Kafka Cluster.
+CONFLUENT_CLOUD_SECRET = ''  # This is your Confluent Cloud API secret for your user account, not to be confused with API keys for your Kafka Cluster.
+```
+
 #### Tinybird
 If you don't already have a Tinybird Workspace, you will need to create one.
 
 You can test if Tinybird can connect to your Confluent cluster by putting the connection details into the 'Add Datasource' interface in the UI - if it can connect it will retrieve a list of Topics on the cluster.
 
+Configuration details from `conf.py`:
+```
+# Tinybird connection details
+TINYBIRD_API_URI = 'api'  # may also be api.us-east
+TINYBIRD_API_KEY = ''  # This is your Tinybird API key. It should have rights to create datasources and pipes, so your default Admin token is easiest.
+TINYBIRD_CONFLUENT_CONNECTION_NAME = ''  # Name that Tinybird uses for the Tinybird stream connection. 
+```
 
 ## [Using the demo script](#using-the-demo)
 
@@ -130,13 +168,13 @@ python demo_cdc.py --create-pipeline --source-db PG
 ```
 
 5. Generate events
-You can generate more events to see how the Pipeline works, or test the latency etc. by running the script without other switches.
+You can generate more events to see how the Pipeline works, or test the latency, by running the script without other switches.
 ```
 python demo_cdc.py --source-db PG
 ```
 
 6. Remove the Pipeline
-You can remove the pipeline again using the removal command, this can also be used to recreate it by combining the commands
+You can remove the pipeline using the removal command. 
 ```
 python demo_cdc.py --remove-pipeline --source-db PG
 ```
@@ -160,5 +198,5 @@ If you recreate the Table and Confluent setup, you also have to recreate the Tin
 
 The script assumes your CONFLUENT_CLOUD_KEY has the same rights as you would in the console, and is not a limited access service account.
 
-If you are experimenting with other settings you may wish to create the Connector in the Confluent UI first, as it has more robust checking. The API sometimes simply gives a 500 if it doesn't like a field you have submitted, whereas the UI is a little more verbose.
+If you are experimenting with other settings you may wish to create the Connector in the Confluent UI first, as it has more robust checking. The Confluent API sometimes simply gives a 500 if it doesn't like a field you have submitted, whereas the UI is a little more verbose.
 
