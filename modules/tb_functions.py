@@ -166,7 +166,7 @@ def datasources_delete(names):
             resp.raise_for_status()
             print(f"Deleted Tinybird Datasource {name}")
 
-def update_datasource_info(files, kafka_topic):
+def update_datasource_info(files):
     for filepath in files:
         if 'raw.datasource' in filepath:
             # Replace the Kafka Group ID in the definition files
@@ -185,6 +185,9 @@ def update_datasource_info(files, kafka_topic):
             print(f"Generated new Kafka Group ID: {new_group_id}")
 
             # Ensure KAFKA_TOPIC is correct for database and table name
+            # Expecting file to be named in the format <table_name>_raw.datasource
+            table_name = filename.split('_')[0]
+            kafka_topic = config.KAFKA_CDC_TOPICS[table_name]
             print(f"Updating Kafka Topic to {kafka_topic}...")
             topic_start_index = file_content.find("KAFKA_TOPIC '") + len("KAFKA_TOPIC '")
             topic_end_index = file_content.find("'", topic_start_index)
@@ -290,37 +293,30 @@ def pipes_delete(names):
             resp.raise_for_status()
             print(f"Deleted Tinybird Pipe {name}")
 
-def clean_workspace(source_db, include_connector=False):
-    print(f"Cleaning Tinybird workspace for {source_db}...")
-    files = get_def_files_for_db(source_db)
-    pipes_to_delete = [file for file in files if os.path.dirname(file) == './pipes']
-    datasources_to_delete = [file for file in files if os.path.dirname(file) == './datasources']
+def clean_workspace(files, include_connector=False):
+    pipes_to_delete = [file for file in files if '/pipes' in os.path.dirname(file)]
+    datasources_to_delete = [file for file in files if '/datasources' in os.path.dirname(file)]
     # Do Pipes first
-    current_pipe_names = [x['name'] for x in pipes_list()]
     pipenames_to_delete = [os.path.basename(file).split('.')[0] for file in pipes_to_delete]
-    pipes_delete([x for x in pipenames_to_delete if x in current_pipe_names])
+    print(f"Requesting Delete of Pipes: {pipenames_to_delete}")
+    pipes_delete(pipenames_to_delete)
     # Then do Datasources
-    current_datasource_names = [x['name'] for x in datasources_list()]
     datasourcenames_to_delete = [os.path.basename(file).split('.')[0] for file in datasources_to_delete]
-    datasources_delete([x for x in datasourcenames_to_delete if x in current_datasource_names])
-    # Then do Dataspace Tokens
-    current_tokens = tokens_list()
-    current_token_names = [x['name'] for x in current_tokens]
-    kafka_token_patten = "_".join([
-        config.TINYBIRD_CONFLUENT_CONNECTION_NAME,
-        source_db.lower(),
-        config.USERS_TABLE_NAME
-        ])
-    tokens_to_remove = [
-        token_name for token_name in current_token_names if token_name.startswith(kafka_token_patten)
-        ]
-    # Then do Pipe Tokens
-    tokens_to_remove += [
-        x for x in get_token_names_from_pipes(pipes_to_delete) if x in current_token_names
-        ]
-    print(f"Found {len(tokens_to_remove)} Tinybird Tokens to remove for {source_db}.")
+    print(f"Requesting Delete of Datasources: {datasourcenames_to_delete}")
+    datasources_delete(datasourcenames_to_delete)
+    # Then do Workspace Tokens
+    tokens_to_remove = []
+    # First Datasources
+    for datasource_name in datasourcenames_to_delete:
+        tokens_to_remove.append("_".join([
+            config.TINYBIRD_CONFLUENT_CONNECTION_NAME,
+            datasource_name
+            ]))
+    # Then add Pipe Tokens
+    tokens_to_remove += get_token_names_from_pipes(pipes_to_delete)
+    print(f"Requesting Delete of Tokens: {tokens_to_remove}")
     # Do token removal
-    _ = [tokens_delete(token_name) for token_name in set(tokens_to_remove)]
+    tokens_delete(set(tokens_to_remove))
     if include_connector:
         # Do Connectors
         connector = connectors_get(name=config.TINYBIRD_CONFLUENT_CONNECTION_NAME)
@@ -350,12 +346,17 @@ def tokens_list():
     print(f"Found {len(resp.json()['tokens'])} Tinybird Tokens.")
     return resp.json()['tokens']
 
-def tokens_delete(name):
-    print(f"Deleting Tinybird Token {name}")
-    resp = requests.delete(
-        config.TB_BASE_URL + f"tokens/{name}",
-        headers={'Authorization': f'Bearer {config.TINYBIRD_API_KEY}'}
-    )
-    resp.raise_for_status()
-    print(f"Deleted Tinybird Token {name}")
+def tokens_delete(names):
+    token_list = tokens_list()
+    for name in names:
+        if name not in [x['name'] for x in token_list]:
+            print(f"Tinybird Token {name} not found.")
+        else:
+            print(f"Deleting Tinybird Token {name}")
+            resp = requests.delete(
+                config.TB_BASE_URL + f"tokens/{name}",
+                headers={'Authorization': f'Bearer {config.TINYBIRD_API_KEY}'}
+            )
+            resp.raise_for_status()
+            print(f"Deleted Tinybird Token {name}")
 

@@ -89,7 +89,7 @@ def connector_delete(name, env_name, cluster_name):
     resp.raise_for_status()
     print(f"Deleted Confluent Cloud Connector with name {name}")
 
-def connector_create(name, source_db, env_name, cluster_name):
+def connector_create(name, source_db, env_name, cluster_name, table_include_list):
     # The API response for this call can be obtuse, sending 500 for minor misconfigurations.
     # Therefore change carefully and test thoroughly.
     if name in connector_list(cluster_name=cluster_name, env_name=env_name):
@@ -117,8 +117,8 @@ def connector_create(name, source_db, env_name, cluster_name):
         "database.password": config.MYSQL_PASSWORD,
         "database.server.name": config.MYSQL_DB_NAME,
         "database.whitelist": config.MYSQL_DB_NAME,
-        "table.include.list": '.'.join([config.MYSQL_DB_NAME, config.USERS_TABLE_NAME]),
-        "database.include.list": "mysql_cdc_demo",
+        "table.include.list": table_include_list,
+        "database.include.list": config.MYSQL_DB_NAME,
         "snapshot.mode": "when_needed",
         "database.ssl.mode": "preferred"
     }
@@ -131,7 +131,7 @@ def connector_create(name, source_db, env_name, cluster_name):
         "database.dbname": config.PG_DATABASE,
         "database.server.name": config.PG_DATABASE,  # This is a logical name used for Confluent topics
         "database.sslmode": "require",
-        "table.include.list":f"public.{config.USERS_TABLE_NAME}", 
+        "table.include.list": table_include_list, 
         "plugin.name": "pgoutput",
         "snapshot.mode": "exported"
     }
@@ -182,3 +182,7 @@ def k_topic_delete(topic_name):
     kadmin = k_connect_kadmin()
     kadmin.delete_topics([topic_name])
     print(f"Deleted Kafka topic {topic_name}.")
+
+def k_topic_cleanup():
+    for table in config.KAFKA_CDC_TOPICS:
+        k_topic_delete(config.KAFKA_CDC_TOPICS[table])

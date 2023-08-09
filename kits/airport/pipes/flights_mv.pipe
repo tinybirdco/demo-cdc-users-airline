@@ -1,0 +1,23 @@
+NODE flights_mv_0
+SQL >
+
+    SELECT
+        id,
+        updated_at,
+        created_at,
+        flight_number,
+        passenger_count,
+        status,
+        closed_at,
+        boarding_at,
+        boarded_at,
+        departed_at
+    FROM flights_raw
+
+TYPE materialized
+DATASOURCE flights_latest
+ENGINE "ReplacingMergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(updated_at)"
+ENGINE_SORTING_KEY "id"
+ENGINE_VER "updated_at"
+

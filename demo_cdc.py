@@ -222,6 +222,7 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
         conn = db_functions.pg_connect_db()
         users_api_endpoint = PG_ENDPOINT_NAME
         db_table_create_query = PG_USERS_TABLE_CREATE
+        table_include_list = f"public.{config.USERS_TABLE_NAME}"
     elif source_db in ['MYSQL', 'mysql']:
         source_db = 'MYSQL'
         debezium_connector_name = config.MYSQL_CONFLUENT_CONNECTOR_NAME
@@ -229,6 +230,7 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
         conn = db_functions.mysql_connect_db()
         users_api_endpoint = MYSQL_ENDPOINT_NAME
         db_table_create_query = MYSQL_USERS_TABLE_CREATE
+        table_include_list = '.'.join([config.MYSQL_DB_NAME, config.USERS_TABLE_NAME])
     else:
         raise Exception(f"Invalid source_db: {source_db}")
     if compare_tables:
@@ -275,7 +277,9 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
             conn,
             table_name=config.USERS_TABLE_NAME,
             query=db_table_create_query)
-        cc_functions.connector_create(name=debezium_connector_name, source_db=source_db, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME)
+        cc_functions.connector_create(
+            name=debezium_connector_name, source_db=source_db, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME,
+            table_include_list=table_include_list)
         tb_functions.ensure_kafka_connection()
         generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
         # Get listing of definition files

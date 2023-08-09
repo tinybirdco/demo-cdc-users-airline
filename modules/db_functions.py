@@ -19,10 +19,20 @@ def mysql_connect_db():
     print(f"Creating the {config.MYSQL_DB_NAME} database if not exists...")
     cur.execute(f"CREATE DATABASE IF NOT EXISTS {config.MYSQL_DB_NAME}")
     cur.fetchall()
+    cur.execute(f"USE {config.MYSQL_DB_NAME}")
+    cur.fetchall()
     cur.close()
     conn.database = config.MYSQL_DB_NAME
     print(f"Connected to the MySQL database. id: {conn.connection_id}")
     return conn
+
+def mysql_database_drop(conn):
+    print(f"Dropping the {config.MYSQL_DB_NAME} database if exists...")
+    cur = conn.cursor()
+    cur.execute(f"DROP DATABASE IF EXISTS {config.MYSQL_DB_NAME}")
+    cur.fetchall()
+    cur.close()
+    print(f"{config.MYSQL_DB_NAME} database dropped if it existed.")
 
 def pg_connect_db():
     print("Connecting to the Postgres database...")
