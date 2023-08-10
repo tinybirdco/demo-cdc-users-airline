@@ -1,4 +1,3 @@
-# Data Source created from Pipe 'flights_mv'
 
 SCHEMA >
     `id` Int16,

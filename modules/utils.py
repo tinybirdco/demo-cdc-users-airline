@@ -7,7 +7,7 @@ import logging
 # Add the parent directory to the path so that we can import the conf module without fuss
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def setup_logging(print_to_console=True):
+def setup_logging(print_to_console=False):
     logger = logging.getLogger('airport_data_generator')
     
     if not logger.handlers:  # Check if the logger already has handlers
