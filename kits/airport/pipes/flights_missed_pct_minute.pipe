@@ -1,5 +1,3 @@
-TOKEN "flights_missed_pct_minute_endpoint_read_7278" READ
-
 TOKEN "Dashboard_Read" READ
 
 NODE flights_missed_pct_minute_0
@@ -15,7 +13,6 @@ SQL >
     where f.closed_at is not null
     and p.status = 'notboarded'
     group by f.id, f.closed_at, f.passenger_count
-    order by closed_at desc
 
 
 
@@ -23,19 +20,17 @@ NODE flights_missed_pct_minute_1
 SQL >
 
     %
-    SELECT
-        toStartOfMinute(closed_at) as window,
-        -- Calculate percentage, defaulting to 0 if denominator is 0 or null
-        round(
-            ifNull(sum(missed_passengers) * 100 / nullIf(sum(booked_passengers), 0), 0),
-            2
-        ) as flights_missed_pct
-    FROM flights_missed_pct_minute_0
-    WHERE closed_at >= {% if defined(start) %} {{DateTime(start)}} {% else %} subtractHours(now(), 1) {% end %}
-    AND closed_at <= {% if defined(end) %} {{DateTime(end)}} {% else %} now() {% end %}
-    GROUP BY window
-    ORDER BY window DESC
-
+            SELECT
+                toStartOfMinute(closed_at) as window,
+                -- Calculate percentage, defaulting to 0 if denominator is 0 or null
+                round(
+                    ifNull(sum(missed_passengers) * 100 / nullIf(sum(booked_passengers), 0), 0),
+                    2
+                ) as flights_missed_pct
+            FROM flights_missed_pct_minute_0
+            WHERE closed_at >= {% if defined(start) %} {{DateTime(start)}} {% else %} subtractHours(now(), 1) {% end %}
+            AND closed_at <= {% if defined(end) %} {{DateTime(end)}} {% else %} now() {% end %}
+            GROUP BY window
 
 
 
@@ -49,9 +44,8 @@ SQL >
         start_time AS (
             SELECT subtractHours(toStartOfMinute(cur_ts), 1) AS start_ts FROM current_time
         )
-
     SELECT
-        series_time AS window,
+        series_time AS time_interval,
         ifNull(flights_missed_pct, 0) AS flights_missed_pct
     FROM (
         -- Generate a continuous series of minutes from start_time to current_time
@@ -63,7 +57,6 @@ SQL >
     ) AS series
     LEFT JOIN flights_missed_pct_minute_1
     ON series.series_time = flights_missed_pct_minute_1.window
-    ORDER BY series_time DESC
-
+    ORDER BY series_time asc
 
 

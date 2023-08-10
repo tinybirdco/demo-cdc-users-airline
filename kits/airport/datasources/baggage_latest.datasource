@@ -1,10 +1,9 @@
-# Data Source created from Pipe 'baggage_mv'
 
 SCHEMA >
     `id` Int32,
     `updated_at` DateTime,
     `created_at` DateTime,
-    `flight_id` Int16,
+    `flight_id` Nullable(Int16),
     `passenger_id` Int32,
     `weight` Float64,
     `status` String,

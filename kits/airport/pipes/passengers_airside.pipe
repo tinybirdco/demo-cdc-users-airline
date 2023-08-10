@@ -12,7 +12,7 @@ SQL >
     where checkedin_at is not null
     and onboarded_at is null
     and notboarded_at is null
-    and f.status in ['open', 'closed', 'boarding']
+    and f.status in ['open', 'closed', 'boarding', 'boarded']
     group by flight_number
     order by flight_number
 
