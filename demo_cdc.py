@@ -16,8 +16,6 @@ MYSQL_ENDPOINT_NAME = 'mysql_users_api_pipe.json'
 PG_ENDPOINT_NAME = 'pg_users_api_rmt.json'
 
 # Demo Constants
-NUM_EVENTS = 10 # TODO: promote to configuration or script command-line option.
-
 INSERT_WEIGHT = 30
 UPDATE_WEIGHT = 60
 DELETE_WEIGHT = 10
@@ -204,17 +202,18 @@ def compare_source_to_dest(source_conn, dest_endpoint):
     return True
 
 @click.command()
-@click.option('--test-connection', is_flag=True, help='Test connections only.')
 @click.option('--source-db', type=click.Choice(['PG', 'MYSQL']), default='PG', help='Source database type. Defaults to PG.')
+@click.option('--num-events', '-n', type=int, default=10)
+@click.option('--test-connection', is_flag=True, help='Test connections only.')
 @click.option('--tb-connect-kafka', is_flag=True, help='Create a Kafka connection in Tinybird.')
-@click.option('--fetch-users', is_flag=True, help='Fetch and print the user table from source Database.')
+@click.option('--fetch-sites', is_flag=True, help='Fetch and print the site table from source Database.') # [] Object-type-specific.
 @click.option('--drop-table', is_flag=True, help='Drop the Users table from the source Database.')
 @click.option('--tb-clean', is_flag=True, help='Clean out the Tinybird Workspace of Pipeline resources.')
 @click.option('--tb-include-connector', is_flag=True, help='Also remove the shared Tinybird Confluent connector. Affects all source databases.')
 @click.option('--remove-pipeline', is_flag=True, help='Reset the pipeline. Will Drop source table, remove debezium connector, drop the topic, and clean the Tinybird workspace')
 @click.option('--create-pipeline', is_flag=True, help='Create the Pipeline. Will create the table, a few initial user events, create debezium connector and topic, and the Tinybird Confluent connection.')
 @click.option('--compare-tables', is_flag=True, help='Compare the source table to the destination endpoint.')
-def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, tb_clean, tb_include_connector, remove_pipeline, create_pipeline, compare_tables):
+def main(source_db, num_events, test_connection, tb_connect_kafka, fetch_sites, drop_table, tb_clean, tb_include_connector, remove_pipeline, create_pipeline, compare_tables):
     if source_db in ['PG', 'pg']:
         source_db = 'PG'
         debezium_connector_name = config.PG_CONFLUENT_CONNECTOR_NAME
@@ -235,12 +234,12 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
         if compare_source_to_dest(conn, users_api_endpoint):
             # Mark start time.
             start_time = time.time()
-            generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
+            generate_events(conn, num_events, table_name=config.USERS_TABLE_NAME)
             
             # Mark event generation finish time.
             generated_time = time.time()
             generate_duration = generated_time - start_time
-            print(f'{NUM_EVENTS} events generated in {round(generate_duration,2)} seconds.')
+            print(f'{num_events} events generated in {round(generate_duration,2)} seconds.')
 
             # Wait for events to propagate or until timeout
             while not compare_source_to_dest(conn, users_api_endpoint):
@@ -253,7 +252,7 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
             prograte_duration = progagated_time - generated_time 
             total_duration = progagated_time - start_time
             
-            print(f"{NUM_EVENTS} events created and propagated in {round(total_duration, 2)} seconds. Generation took {round(generate_duration,2)} seconds.")
+            print(f"{num_events} events created and propagated in {round(total_duration, 2)} seconds. Generation took {round(generate_duration,2)} seconds.")
             print(f"Time from last database update to API Endpoint providing finalized data: {round(prograte_duration,2)} seconds.")
         else:
             print(f"Source table {config.USERS_TABLE_NAME} and destination endpoint {users_api_endpoint} are either empty or not identical.")
@@ -286,7 +285,7 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
             query=db_table_create_query)
         cc_functions.connector_create(name=debezium_connector_name, source_db=source_db, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME)
         tb_functions.ensure_kafka_connection()
-        generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
+        generate_events(conn, num_events, table_name=config.USERS_TABLE_NAME)
         # Get listing of definition files
         files_to_upload = tb_functions.get_def_files_for_db(source_db)
         print(f"Updating local Tinybird definition files for {source_db}...")
@@ -295,8 +294,8 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
         tb_functions.upload_def_for_db(files_to_upload)       
     else:
         try:
-            generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
-            print(f'{NUM_EVENTS} events generated.')
+            generate_events(conn, num_events, table_name=config.USERS_TABLE_NAME)
+            print(f'{num_events} events generated.')
         except Exception as e:
             print(f'Error: {e}')
         finally:
