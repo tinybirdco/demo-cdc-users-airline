@@ -5,6 +5,7 @@
   * [What the demo script does](#cdc-what-script-does)
 * [Example script commands](#call-examples)
 * [Getting started](#getting-started)
+  * [Making sure your database supports CDC](#cdc-ready)
   * [Setting up the demo script](#setting-up-code)
   * [Configuring the script](#configuration)
     * [Database](#databases)
@@ -12,6 +13,7 @@
       * [PostgreSQL](#PostgreSQL)
     * [Confluent Cloud](#confluent-cloud)
     * [Tinybird](#tinybird)
+  * [Script constants](#constants)
 * [Things to know](#things-to-know)
 * [Troubleshooting](#roubleshooting)
 
@@ -122,7 +124,7 @@ To get started with this demo, you need to bring the following:
 
 Now we can walk through deploying the infrastructure.
 
-#### Make sure your database server supports CDC
+### [Make sure your database supports CDC](#cdc-ready)
 
 Confirm your database server is ready to generate CDC events, and update configuration details if needed. To make changes, you will need `admin` rights or define a new user with CDC-related permissions. Depending on the database server type, and the CDC connector used, different configuration settings may be required. 
 
@@ -130,21 +132,18 @@ Confirm your database server is ready to generate CDC events, and update configu
 
 * By default, the generation of CDC events is enabled. You can confirm that this feature is enabled with this query: `SHOW VARIABLES LIKE 'log_bin'`. If the `log_bin` is set to `ON`, you are all set. If not, update the value to `ON`. 
 
-##### PostgreSQL
-
-* This demo was developed with Confluent Cloud, and its PostgreSQL CDC connector requires that the MySQL `binlog_format` is set to `ROW`. Check the server setting with `SHOW VARIABLES LIKE 'binlog_format'` and update the value if needed.
+* This demo was developed with Confluent Cloud, and its MySQL CDC connector requires that the MySQL `binlog_format` is set to `ROW`. Check the server setting with `SHOW VARIABLES LIKE 'binlog_format'` and update the value if needed.
 * Set `binlog_row_image=full` as well.
 * See the [Confluent MySQL CDC Connector guide](https://docs.confluent.io/cloud/current/connectors/cc-mysql-source-cdc-debezium.html) for more set-up and configuration details.  
 
-Configuration details from `conf.py`:
+##### PostgreSQL
 
 * This demo was developed with Confluent Cloud, and its PostgreSQL CDC connector depends on the PostgreSQL server `rds.logical_replication = 1` setting.  
 * See the [Confluent PostgreSQL CDC Connector guide](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html) for more set-up and configuration details.  
 * If you are creating a PostgreSQL database, this demo has been tested with PostgreSQL 14 and 15. 
 
 
-
-#### [Setting up the demo script](#setting-up-code)  
+### [Setting up the demo script](#setting-up-code)  
 
 ##### Python setup
 You should use a virtualenv as good practice.
@@ -173,9 +172,9 @@ On AWS RDS, server configuration are managed with parameter groups.
 
 The `conf.py` file contains configuration details (keys, secrets, paths, etc.) for your database, your Confluent account, and your Tinybird account.
 
-A `conf.py` template is provided [HERE](https://github.com/tinybirdco/cdc_demo/blob/main/conf.py).
+A `conf.py` template is provided [HERE](https://github.com/tinybirdco/cdc_demo/blob/main/conf.py). The script looks for this file in its local folder. The project's `.gitignore` contains this file. 
 
-The script looks for this file in its local folder. The project's `.gitignore` contains this file. 
+There are also some fundamental configuration details set up/hardcoded in the script code. See the [Script constants]() section for more details.  
 
 #### [Database](#database)
 
@@ -241,6 +240,37 @@ TINYBIRD_API_URI = 'api'  # may also be api.us-east
 TINYBIRD_API_KEY = ''  # This is your Tinybird API key. It should have rights to create datasources and pipes, so your default Admin token is easiest.
 TINYBIRD_CONFLUENT_CONNECTION_NAME = ''  # Name that Tinybird uses for the Tinybird stream connection. 
 ```
+
+### [Script constants](#constants)
+
+The following constants are set at the top of the `demo_cdc.py` script:
+
+```
+# Demo Constants
+INSERT_WEIGHT = 30
+UPDATE_WEIGHT = 60
+DELETE_WEIGHT = 10
+ADDRESS_UPDATE_PROBABILITY = 0.1
+
+LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'IT']
+
+```
+
+The following details and patterns are hardcoded in the `./modules/utils/py` file:
+
+
+```
+# Set any derived attributes
+cls._instance.TB_BASE_URL = f"https://{cls._instance.TINYBIRD_API_URI}.tinybird.co/v0/"
+cls._instance.CFLT_BASE_URL = "https://api.confluent.cloud/"
+cls._instance.PG_KAFKA_CDC_TOPIC = f"{cls._instance.PG_DATABASE}.public.{cls._instance.USERS_TABLE_NAME}"
+# Note that the documentation says 'schemaName' but that is actually just the database name in these configurations.
+cls._instance.MYSQL_KAFKA_CDC_TOPIC = f"{cls._instance.MYSQL_DB_NAME}.{cls._instance.MYSQL_DB_NAME}.{cls._instance.USERS_TABLE_NAME}"
+```
+The Kafka Topic Name is generated by the Confluent connector using a fixed structure. See [HERE](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-cdc-source-debezium.html) for PostgreSQL details, and [HERE](https://docs.confluent.io/cloud/current/connectors/cc-mysql-source-cdc-debezium.html) for MySQL details.  
+
+
+
 
 ## [Things to know](#things-to-know)
 
