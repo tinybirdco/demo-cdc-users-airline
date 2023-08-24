@@ -92,7 +92,7 @@ The script will create a new database table and create a Confluent CDC Connector
 python demo_cdc.py --create-pipeline --source-db PG
 ```
 
-After creating the pipeline, it will trigger a set of database events. By default, it will create 10 events, and you can specify a customer number with `--num-events`.
+After creating the pipeline, it will trigger a set of database events. By default, it will create 10 events, and you can specify a custom number with `--num-events`.
 
 #### Generate events
 You can generate more events to see how the Pipeline works, or test the latency, by running the script without other switches.
