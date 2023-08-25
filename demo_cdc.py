@@ -206,14 +206,14 @@ def compare_source_to_dest(source_conn, dest_endpoint):
 @click.option('--num-events', '-n', type=int, default=10)
 @click.option('--test-connection', is_flag=True, help='Test connections only.')
 @click.option('--tb-connect-kafka', is_flag=True, help='Create a Kafka connection in Tinybird.')
-@click.option('--fetch-sites', is_flag=True, help='Fetch and print the site table from source Database.') # [] Object-type-specific.
+@click.option('--fetch-users', is_flag=True, help='Fetch and print the site table from source Database.') # [] Object-type-specific.
 @click.option('--drop-table', is_flag=True, help='Drop the Users table from the source Database.')
 @click.option('--tb-clean', is_flag=True, help='Clean out the Tinybird Workspace of Pipeline resources.')
 @click.option('--tb-include-connector', is_flag=True, help='Also remove the shared Tinybird Confluent connector. Affects all source databases.')
 @click.option('--remove-pipeline', is_flag=True, help='Reset the pipeline. Will Drop source table, remove debezium connector, drop the topic, and clean the Tinybird workspace')
 @click.option('--create-pipeline', is_flag=True, help='Create the Pipeline. Will create the table, a few initial user events, create debezium connector and topic, and the Tinybird Confluent connection.')
 @click.option('--compare-tables', is_flag=True, help='Compare the source table to the destination endpoint.')
-def main(source_db, num_events, test_connection, tb_connect_kafka, fetch_sites, drop_table, tb_clean, tb_include_connector, remove_pipeline, create_pipeline, compare_tables):
+def main(source_db, num_events, test_connection, tb_connect_kafka, fetch_users, drop_table, tb_clean, tb_include_connector, remove_pipeline, create_pipeline, compare_tables):
     if source_db in ['PG', 'pg']:
         source_db = 'PG'
         debezium_connector_name = config.PG_CONFLUENT_CONNECTOR_NAME
