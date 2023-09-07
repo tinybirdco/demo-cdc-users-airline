@@ -1,9 +1,0 @@
-TOKEN "pg_users_api_rmt" READ
-
-NODE Users_api_0
-SQL >
-
-    SELECT * FROM pg_users_mv FINAL
-    order by id
-
-

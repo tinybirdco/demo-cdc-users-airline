@@ -1,0 +1,16 @@
+NODE users_mv_0
+SQL >
+
+    SELECT
+    id, name, email, address, phone_number, email_verified, onboarded, deleted, created_at, updated_at,
+    __timestamp as event_timestamp,
+    toFixedString(lang, 2) as lang
+    FROM users_raw
+
+TYPE materialized
+DATASOURCE users_latest
+ENGINE "ReplacingMergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(updated_at)"
+ENGINE_SORTING_KEY "id"
+ENGINE_VER "updated_at"
+

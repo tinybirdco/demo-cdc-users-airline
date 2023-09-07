@@ -1,0 +1,14 @@
+NODE users_mv_0
+SQL >
+
+    SELECT id, name, email, address, phone_number, email_verified, onboarded, deleted, 
+    __timestamp as event_timestamp,
+    toFixedString(lang, 2) as lang,
+    fromUnixTimestamp64Micro(created_at) as created_at,
+    fromUnixTimestamp64Micro(updated_at) as updated_at 
+    FROM users_raw
+
+TYPE materialized
+DATASOURCE users_latest
+
+

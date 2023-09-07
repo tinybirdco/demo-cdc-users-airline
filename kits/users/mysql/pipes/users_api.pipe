@@ -1,0 +1,7 @@
+TOKEN "users_api_read" READ
+
+NODE Users_api_0
+SQL >
+
+    SELECT * FROM users_latest FINAL
+    order by id

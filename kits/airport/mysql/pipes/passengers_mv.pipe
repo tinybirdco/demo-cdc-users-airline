@@ -1,0 +1,19 @@
+NODE passengers_mv_0
+SQL >
+
+    SELECT
+        id,
+        updated_at,
+        created_at,
+        flight_id,
+        name,
+        status,
+        checkedin_at,
+        onboarded_at,
+        notboarded_at
+    FROM passengers_raw
+
+TYPE materialized
+DATASOURCE passengers_latest
+
+

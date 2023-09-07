@@ -403,9 +403,9 @@ def generate_passengers(conn, passengers_to_generate):
     conn.commit()
     logger.info(f"Generated {passengers_to_generate} new passengers with {len(baggage_values)} pieces of luggage.")
 
-
 def generate_events(conn):
     logger.info("Starting the event generation loop...")
+    print("Starting the event generation loop...")  # Printing as well so there's something in the console output
     while True:
         loop_start_time = time.time()
         process_passenger_pool(conn)
@@ -435,18 +435,19 @@ def generate_events(conn):
         loop_end_time = time.time()
         loop_time_delta = loop_end_time - loop_start_time
         logger.info(f"Event generation loop completed in {round(loop_time_delta, 1)} seconds.")
+        print(f"Event generation loop completed in {round(loop_time_delta, 1)} seconds.")  # Printing as well so there's something in the console output
 
 @click.command()
 @click.option('--remove-pipeline', is_flag=True, help='Reset the pipeline. Will Drop source table, remove debezium connector, drop the topic, and clean the Tinybird workspace')
 @click.option('--create-pipeline', is_flag=True, help='Create the Pipeline. Will create the table, a few initial user events, create debezium connector and topic, and the Tinybird Confluent connection.')
 def main(remove_pipeline, create_pipeline):
-    project_kit_path = 'kits/airport'
+    project_kit_path = 'kits/airport/mysql'
     source_db = 'MYSQL'
     config.set_source_db(source_db)
     debezium_connector_name = config.MYSQL_CONFLUENT_CONNECTOR_NAME
     conn = db_functions.mysql_connect_db()
-    config.set_kafka_topics(source_db, TABLES_TO_REPLICATE)
-    table_include_list = ','.join([f"{config.MYSQL_DB_NAME}.{x}" for x in TABLES_TO_REPLICATE])
+    config.set_kafka_topics(TABLES_TO_REPLICATE)
+    config.set_include_tables(TABLES_TO_REPLICATE)
 
     if remove_pipeline:
         logger.info(f"Resetting the Tinybird pipeline from {source_db}...")
@@ -466,7 +467,7 @@ def main(remove_pipeline, create_pipeline):
             db_functions.table_create(conn, table_name=table_name, query=table_query)
         
         cc_functions.connector_create(name=debezium_connector_name, source_db=source_db, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME,
-        table_include_list=table_include_list                              )
+        table_include_list=config.INCLUDE_TABLES                              )
         tb_functions.ensure_kafka_connection()
         files_to_upload = utils.get_all_files_in_directory(project_kit_path)
         tb_functions.update_datasource_info(files_to_upload)

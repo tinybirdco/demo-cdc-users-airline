@@ -1,0 +1,19 @@
+
+SCHEMA >
+    `id` Int16,
+    `name` String,
+    `email` String,
+    `address` String,
+    `phone_number` String,
+    `email_verified` UInt8,
+    `onboarded` UInt8,
+    `deleted` UInt8,
+    `event_timestamp` DateTime,
+    `lang` FixedString(2),
+    `created_at` DateTime64(6),
+    `updated_at_unix` Int64,
+    `batch_max_updated` Int64
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYear(event_timestamp)"
+ENGINE_SORTING_KEY "event_timestamp, batch_max_updated, updated_at_unix"

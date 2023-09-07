@@ -1,0 +1,20 @@
+TOKEN "passengers_by_flight_status_endpoint_read_4036" READ
+
+NODE passengers_by_flight_status_0
+SQL >
+
+    %
+    select
+        f.flight_number,
+        f.passenger_count as passengers_booked,
+        f.status as flight_status,
+        p.status as passenger_status,
+        count(p.id) as passenger_total
+    from flights_latest as f FINAL
+    inner join passengers_latest as p FINAL
+    on p.flight_id = f.id
+    where flight_status =  {{String(flight_status, 'open')}}
+    group by flight_number, passengers_booked, flight_status, passenger_status
+    order by f.flight_number
+
+

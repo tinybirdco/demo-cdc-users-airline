@@ -175,16 +175,6 @@ def update_datasource_info(files):
             with open(filepath, 'r') as file:
                 file_content = file.read()
 
-            logger.info(f"Generating new Kafka Group ID in {filename}...")
-            # Replace the KAFKA_GROUP_ID line
-            start_index = file_content.find("KAFKA_GROUP_ID '") + len("KAFKA_GROUP_ID '")
-            end_index = file_content.find("'", start_index)
-            old_group_id = file_content[start_index:end_index]
-            # Generate new group_id with current unix time
-            new_group_id = old_group_id[:old_group_id.rfind("_")+1] + str(int(time.time()))
-            file_content = file_content.replace(old_group_id, new_group_id)
-            logger.info(f"Generated new Kafka Group ID: {new_group_id}")
-
             # Ensure KAFKA_TOPIC is correct for database and table name
             # Expecting file to be named in the format <table_name>_raw.datasource
             table_name = filename.split('_')[0]
@@ -201,6 +191,16 @@ def update_datasource_info(files):
                 new_topic = topics[0]
             file_content = file_content.replace(old_topic, new_topic)
             logger.info(f"Updated Kafka Topic to {new_topic}")
+
+            logger.info(f"Generating new Kafka Group ID in {filename}...")
+            # Replace the KAFKA_GROUP_ID line
+            start_index = file_content.find("KAFKA_GROUP_ID '") + len("KAFKA_GROUP_ID '")
+            end_index = file_content.find("'", start_index)
+            old_group_id = file_content[start_index:end_index]
+            # Generate new group_id with current unix time
+            new_group_id = new_topic + '_' + str(int(time.time()))
+            file_content = file_content.replace(old_group_id, new_group_id)
+            logger.info(f"Generated new Kafka Group ID: {new_group_id}")
             
             # Fix KAFKA_AUTO_OFFSET_RESET as well
             logger.info(f"Updating Kafka Auto Offset Reset to {config.CONFLUENT_OFFSET_RESET}...")
@@ -240,18 +240,9 @@ def upload_def_file(filepath):
         logger.info(f"Successfully uploaded {filename} to Tinybird.")
     elif resp.status_code == 400:
         logger.info(f"Tinybird returned an Error: {resp.text}")
+        resp.raise_for_status()
     else:
         resp.raise_for_status()
-
-def get_def_files_for_db(source_db):
-    logger.info(f"Getting Tinybird definitions for {source_db}...")
-    files_to_get = [
-        filepath 
-        for directory in ["./datasources", "./pipes"]
-        for filepath in glob.glob(os.path.join(directory, f"{source_db.lower()}_*"))
-    ]
-    logger.info(f"Got {len(files_to_get)} Tinybird definitions for {source_db}.")
-    return files_to_get
 
 def upload_def_for_db(files):
     # We deliberately use the Tinybird definition files here to replicate what a user would typically do in the CLI.
