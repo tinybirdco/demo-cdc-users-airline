@@ -1,0 +1,31 @@
+
+SCHEMA >
+    `__value` String,
+    `__topic` LowCardinality(String),
+    `__partition` Int16,
+    `__offset` Int64,
+    `__timestamp` DateTime,
+    `__key` String,
+    `created_at` DateTime `json:$.created_at`,
+    `flight_id` Nullable(Int16) `json:$.flight_id`,
+    `id` Int32 `json:$.id`,
+    `passenger_id` Int32 `json:$.passenger_id`,
+    `status` String `json:$.status`,
+    `updated_at` DateTime `json:$.updated_at`,
+    `weight` Float64 `json:$.weight`,
+    `offloaded_at` Nullable(DateTime) `json:$.offloaded_at`,
+    `loaded_at` Nullable(DateTime) `json:$.loaded_at`,
+    `checkedin_at` Nullable(DateTime) `json:$.checkedin_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(__timestamp)"
+ENGINE_SORTING_KEY "__timestamp"
+
+KAFKA_CONNECTION_NAME 'cluster_eu_cdc_demo'
+KAFKA_TOPIC 'airporter_demo.airporter_demo.baggage'
+KAFKA_GROUP_ID 'airporter_demo.airporter_demo.baggage_1694091249'
+KAFKA_AUTO_OFFSET_RESET 'latest'
+KAFKA_STORE_RAW_VALUE 'False'
+KAFKA_STORE_HEADERS 'False'
+KAFKA_TARGET_PARTITIONS 'auto'
+KAFKA_KEY_AVRO_DESERIALIZATION ''

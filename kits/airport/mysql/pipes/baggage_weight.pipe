@@ -1,0 +1,21 @@
+TOKEN "baggage_weight_endpoint_read_7649" READ
+
+NODE baggage_weight_0
+SQL >
+
+    %
+            SELECT
+              fl.flight_number as flight_number,
+              fl.status as flight_status,
+              round(sum(bl.weight)) as baggage_weight_total
+            FROM flights_latest as fl FINAL
+            LEFT JOIN baggage_latest as bl FINAL
+            ON fl.id = bl.flight_id
+            where fl.status in ['open', 'closed', 'boarding', 'boarded']
+            {% if defined(flight_status) %}
+            and flight_status = {{String(flight_status)}}
+            {% end %}
+            GROUP BY flight_number, updated_at, flight_status
+            order by flight_number asc
+
+

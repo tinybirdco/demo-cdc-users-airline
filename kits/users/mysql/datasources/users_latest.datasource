@@ -1,4 +1,4 @@
-# Data Source created from Pipe 'mysql_users_raw_pipe'
+# Data Source created from Pipe 'users_mv'
 
 SCHEMA >
     `id` Int16,
