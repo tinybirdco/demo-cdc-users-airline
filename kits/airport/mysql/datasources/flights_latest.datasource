@@ -1,0 +1,17 @@
+
+SCHEMA >
+    `id` Int16,
+    `updated_at` DateTime,
+    `created_at` DateTime,
+    `flight_number` String,
+    `passenger_count` Int16,
+    `status` String,
+    `closed_at` Nullable(DateTime),
+    `boarding_at` Nullable(DateTime),
+    `boarded_at` Nullable(DateTime),
+    `departed_at` Nullable(DateTime)
+
+ENGINE "ReplacingMergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(updated_at)"
+ENGINE_SORTING_KEY "id"
+ENGINE_VER "updated_at"

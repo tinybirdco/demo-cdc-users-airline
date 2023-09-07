@@ -1,0 +1,27 @@
+
+SCHEMA >
+    `__value` String,
+    `address` String `json:$.address`,
+    `created_at` DateTime `json:$.created_at`,
+    `deleted` Int8 `json:$.deleted`,
+    `email` String `json:$.email`,
+    `email_verified` Int8 `json:$.email_verified`,
+    `id` Int16 `json:$.id`,
+    `lang` LowCardinality(String) `json:$.lang`,
+    `name` String `json:$.name`,
+    `onboarded` Int8 `json:$.onboarded`,
+    `phone_number` String `json:$.phone_number`,
+    `updated_at` DateTime `json:$.updated_at`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(__timestamp)"
+ENGINE_SORTING_KEY "id, updated_at"
+
+KAFKA_CONNECTION_NAME 'cluster_eu_cdc_demo'
+KAFKA_TOPIC 'airporter_demo.airporter_demo.users'
+KAFKA_GROUP_ID 'airporter_demo.airporter_demo.users_1694090225'
+KAFKA_AUTO_OFFSET_RESET 'latest'
+KAFKA_STORE_RAW_VALUE 'False'
+KAFKA_STORE_HEADERS 'False'
+KAFKA_TARGET_PARTITIONS 'auto'
+KAFKA_KEY_AVRO_DESERIALIZATION ''

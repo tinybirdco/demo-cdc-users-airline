@@ -1,0 +1,72 @@
+TOKEN "scheduled_copy_t_users" READ
+
+NODE get_new_events
+DESCRIPTION >
+    Get all events newer than last event in previous batch, deduplicate on id and updated_at
+        Note that this will be empty if there are no new rows
+
+SQL >
+
+    WITH (SELECT max(batch_max_updated) FROM users_batch) as last_batch_ts
+    SELECT 
+        id, 
+        argMax(name, updated_at) as name, 
+        argMax(email, updated_at) as email, 
+        argMax(address, updated_at) as address, 
+        argMax(phone_number, updated_at) as phone_number, 
+        argMax(email_verified, updated_at) as email_verified, 
+        argMax(onboarded, updated_at) as onboarded,
+        argMax(deleted, updated_at) as deleted,
+        argMax(__timestamp, updated_at) as event_timestamp,
+        argMax(toFixedString(lang, 2), updated_at) as lang,
+        argMax(fromUnixTimestamp64Micro(created_at), updated_at) as created_at,
+        max(updated_at) as updated_at_unix,
+        max(updated_at) as batch_max_updated
+    FROM users_raw
+    WHERE updated_at > last_batch_ts
+    GROUP BY id
+
+
+
+NODE backfill_last_batch
+DESCRIPTION >
+    Get all rows from previous batch except where we already have an updated row by id
+        Note that we expect this Datasource to already exist.
+        This node and the previous node should have all different id's
+
+SQL >
+
+    WITH (SELECT max(batch_max_updated) FROM users_batch) as last_batch_ts
+    SELECT * FROM users_batch
+    WHERE batch_max_updated = last_batch_ts 
+    AND id NOT IN (select id from get_new_events)
+
+
+
+NODE produce_new_batch
+DESCRIPTION >
+    Union the updated rows with the other rows from the previous batch
+
+SQL >
+
+    select * from backfill_last_batch
+    UNION ALL
+    select * from get_new_events
+
+
+
+NODE update_batch_max_ts
+DESCRIPTION >
+    Update batch_max_updated to the newest updated_at from the most recent row included in this batch
+        We coalesce new_max_tx with 0 so that the column is not considered nullable, and if something goes wrong with the batch it will be recalulated
+
+SQL >
+
+    WITH (select max(updated_at_unix) from produce_new_batch) as new_max_ts
+    select *, coalesce(new_max_ts, 0) as batch_max_updated from (select * from produce_new_batch)
+
+TYPE copy
+TARGET_DATASOURCE users_batch
+COPY_SCHEDULE 0 * * * *
+
+

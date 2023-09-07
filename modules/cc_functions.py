@@ -108,7 +108,8 @@ def connector_create(name, source_db, env_name, cluster_name, table_include_list
         "tasks.max": "1",
         "output.data.format": "JSON",
         "output.key.format": "JSON",
-        "cleanup.policy": "delete"
+        "cleanup.policy": "delete",
+        "table.include.list": ','.join(table_include_list)
     }
     mysql_config = {
         "connector.class": "MySqlCdcSource",
@@ -118,7 +119,6 @@ def connector_create(name, source_db, env_name, cluster_name, table_include_list
         "database.password": config.MYSQL_PASSWORD,
         "database.server.name": config.MYSQL_DB_NAME,
         "database.whitelist": config.MYSQL_DB_NAME,
-        "table.include.list": table_include_list,
         "database.include.list": config.MYSQL_DB_NAME,
         "snapshot.mode": "when_needed",
         "database.ssl.mode": "preferred"
@@ -132,7 +132,6 @@ def connector_create(name, source_db, env_name, cluster_name, table_include_list
         "database.dbname": config.PG_DATABASE,
         "database.server.name": config.PG_DATABASE,  # This is a logical name used for Confluent topics
         "database.sslmode": "require",
-        "table.include.list": table_include_list, 
         "plugin.name": "pgoutput",
         "snapshot.mode": "exported"
     }
