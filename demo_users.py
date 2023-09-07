@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 
-from modules import tb_functions
-from modules import cc_functions
-from modules import db_functions
-from modules import utils
+from modules import tb_functions # A collection of Tinybird function for managing resources. 
+from modules import cc_functions # A wrapper for the Confluent APIs. List environemnts and clusters, and creates the CDC Connector. 
+from modules import db_functions # Contains vanilla SQL queries and Postgres/MySQL-specific methods. 
+from modules import utils # Passes the conf.py details to the other modules. 
 
 import random
 import time
@@ -11,19 +11,19 @@ import faker
 import click
 from datetime import datetime
 
-
 config = utils.Config()
+MYSQL_ENDPOINT_NAME = 'mysql_users_api_pipe.json'
+PG_ENDPOINT_NAME = 'pg_users_api_rmt.json'
 
 # Demo Constants
 INSERT_WEIGHT = 30
 UPDATE_WEIGHT = 60
 DELETE_WEIGHT = 10
 ADDRESS_UPDATE_PROBABILITY = 0.1
-NUM_EVENTS = 10
-LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'IT']
 
 MYSQL_ENDPOINT_NAME = 'users_api.json'
 PG_ENDPOINT_NAME = 'users_api_rmt.json'
+LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'IT']
 
 # These should be create if not exists statements for the table
 PG_USERS_TABLE_CREATE = f'''
@@ -206,17 +206,18 @@ def compare_source_to_dest(source_conn, dest_endpoint):
     return True
 
 @click.command()
-@click.option('--test-connection', is_flag=True, help='Test connections only.')
 @click.option('--source-db', type=click.Choice(['PG', 'MYSQL']), default='PG', help='Source database type. Defaults to PG.')
+@click.option('--num-events', '-n', type=int, default=10)
+@click.option('--test-connection', is_flag=True, help='Test connections only.')
 @click.option('--tb-connect-kafka', is_flag=True, help='Create a Kafka connection in Tinybird.')
-@click.option('--fetch-users', is_flag=True, help='Fetch and print the user table from source Database.')
+@click.option('--fetch-users', is_flag=True, help='Fetch and print the site table from source Database.') # [] Object-type-specific.
 @click.option('--drop-table', is_flag=True, help='Drop the Users table from the source Database.')
 @click.option('--tb-clean', is_flag=True, help='Clean out the Tinybird Workspace of Pipeline resources.')
 @click.option('--tb-include-connector', is_flag=True, help='Also remove the shared Tinybird Confluent connector. Affects all source databases.')
 @click.option('--remove-pipeline', is_flag=True, help='Reset the pipeline. Will Drop source table, remove debezium connector, drop the topic, and clean the Tinybird workspace')
 @click.option('--create-pipeline', is_flag=True, help='Create the Pipeline. Will create the table, a few initial user events, create debezium connector and topic, and the Tinybird Confluent connection.')
 @click.option('--compare-tables', is_flag=True, help='Compare the source table to the destination endpoint.')
-def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, tb_clean, tb_include_connector, remove_pipeline, create_pipeline, compare_tables):
+def main(source_db, num_events, test_connection, tb_connect_kafka, fetch_users, drop_table, tb_clean, tb_include_connector, remove_pipeline, create_pipeline, compare_tables):
     if source_db in ['PG', 'pg']:
         source_db = 'PG'
         debezium_connector_name = config.PG_CONFLUENT_CONNECTOR_NAME
@@ -239,19 +240,28 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
 
     if compare_tables:
         if compare_source_to_dest(conn, users_api_endpoint):
-            timer_start = time.time()
-            generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
-            print(f'{NUM_EVENTS} events generated in {time.time() - timer_start} seconds.')
+            # Mark start time.
+            start_time = time.time()
+            generate_events(conn, num_events, table_name=config.USERS_TABLE_NAME)
+            
+            # Mark event generation finish time.
+            generated_time = time.time()
+            generate_duration = generated_time - start_time
+            print(f'{num_events} events generated in {round(generate_duration,2)} seconds.')
 
             # Wait for events to propagate or until timeout
-            wait_start = time.time()
             while not compare_source_to_dest(conn, users_api_endpoint):
-                if time.time() - wait_start > config.TIMEOUT_WAIT:
+                if time.time() - generated_time > config.TIMEOUT_WAIT:
                     raise Exception("Timeout reached waiting for events to propagate.")
                 time.sleep(config.SLEEP_WAIT)
+
+            # Mark propagation finish time.
+            progagated_time = time.time()
+            prograte_duration = progagated_time - generated_time 
+            total_duration = progagated_time - start_time
             
-            total_elapsed = time.time() - timer_start
-            print(f'Events propagated in {round(total_elapsed, 2)} seconds.')
+            print(f"{num_events} events created and propagated in {round(total_duration, 2)} seconds. Generation took {round(generate_duration,2)} seconds.")
+            print(f"Time from last database update to API Endpoint providing finalized data: {round(prograte_duration,2)} seconds.")
         else:
             print(f"Source table {config.USERS_TABLE_NAME} and destination endpoint {users_api_endpoint} are either empty or not identical.")
     elif remove_pipeline:
@@ -290,11 +300,11 @@ def main(test_connection, source_db, tb_connect_kafka, fetch_users, drop_table, 
         print(f"Uploading Tinybird definition files for {config.SOURCE_DB}...")
         tb_functions.upload_def_for_db(def_files)
         time.sleep(3)  # Give it a few seconds to warm up
-        generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
+        generate_events(conn, num_events=num_events, table_name=config.USERS_TABLE_NAME)
     else:
         try:
-            generate_events(conn, num_events=NUM_EVENTS, table_name=config.USERS_TABLE_NAME)
-            print(f'{NUM_EVENTS} events generated.')
+            generate_events(conn, num_events, table_name=config.USERS_TABLE_NAME)
+            print(f'{num_events} events generated.')
         except Exception as e:
             print(f'Error: {e}')
         finally:
