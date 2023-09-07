@@ -1,3 +1,4 @@
 .tinyb
 __pycache__
 .log
+conf.py
