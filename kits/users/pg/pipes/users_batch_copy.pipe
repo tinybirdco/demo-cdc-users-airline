@@ -1,4 +1,4 @@
-TOKEN "scheduled_copy_t_974c64261dd441489045e17b7c0b7e3f" READ
+TOKEN "scheduled_copy_t_users" READ
 
 NODE get_new_events
 DESCRIPTION >
@@ -7,7 +7,7 @@ DESCRIPTION >
 
 SQL >
 
-    WITH (SELECT max(batch_max_updated) FROM pg_users_batch) as last_batch_ts
+    WITH (SELECT max(batch_max_updated) FROM users_batch) as last_batch_ts
     SELECT 
         id, 
         argMax(name, updated_at) as name, 
@@ -22,7 +22,7 @@ SQL >
         argMax(fromUnixTimestamp64Micro(created_at), updated_at) as created_at,
         max(updated_at) as updated_at_unix,
         max(updated_at) as batch_max_updated
-    FROM pg_users_raw
+    FROM users_raw
     WHERE updated_at > last_batch_ts
     GROUP BY id
 
@@ -36,8 +36,8 @@ DESCRIPTION >
 
 SQL >
 
-    WITH (SELECT max(batch_max_updated) FROM pg_users_batch) as last_batch_ts
-    SELECT * FROM pg_users_batch
+    WITH (SELECT max(batch_max_updated) FROM users_batch) as last_batch_ts
+    SELECT * FROM users_batch
     WHERE batch_max_updated = last_batch_ts 
     AND id NOT IN (select id from get_new_events)
 
@@ -66,7 +66,7 @@ SQL >
     select *, coalesce(new_max_ts, 0) as batch_max_updated from (select * from produce_new_batch)
 
 TYPE copy
-TARGET_DATASOURCE pg_users_batch
+TARGET_DATASOURCE users_batch
 COPY_SCHEDULE 0 * * * *
 
 

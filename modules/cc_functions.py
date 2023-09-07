@@ -3,16 +3,17 @@
 from confluent_kafka.admin import AdminClient
 import requests
 
-from .utils import Config
+from .utils import Config, setup_logging
 
 # Sensitive information in external file to avoid Git tracking
 config = Config()
+logger = setup_logging()
 
 # Simple cache for discovered identities to reduce calls to Confluent Cloud API
 cache = {}
 
 def environment_list():
-    print("Listing Confluent Cloud Environments...")
+    logger.info("Listing Confluent Cloud Environments...")
     resp = requests.get(
         config.CFLT_BASE_URL + "org/v2/environments",
         auth=(config.CONFLUENT_CLOUD_KEY, config.CONFLUENT_CLOUD_SECRET)
@@ -21,7 +22,7 @@ def environment_list():
     return resp.json()['data']
 
 def environment_get(env_name):
-    print(f"Getting Confluent Cloud Environment with name {env_name}...")
+    logger.info(f"Getting Confluent Cloud Environment with name {env_name}...")
     envs = environment_list()
     for env in envs:
         if env['display_name'] == env_name:
@@ -30,7 +31,7 @@ def environment_get(env_name):
 
 def cluster_list(env_name):
     env_id = cache_cflt_env_id(env_name)
-    print("Listing Confluent Cloud Clusters...")
+    logger.info("Listing Confluent Cloud Clusters...")
     resp = requests.get(
         config.CFLT_BASE_URL + f"cmk/v2/clusters?environment={env_id}",
         auth=(config.CONFLUENT_CLOUD_KEY, config.CONFLUENT_CLOUD_SECRET)
@@ -39,7 +40,7 @@ def cluster_list(env_name):
     return resp.json()['data']
 
 def cluster_get(cluster_name, env_name):
-    print(f"Getting Confluent Cloud Cluster with name {cluster_name}...")
+    logger.info(f"Getting Confluent Cloud Cluster with name {cluster_name}...")
     clusters = cluster_list(env_name)
     for cluster in clusters:
         if cluster['spec']['display_name'] == cluster_name:
@@ -65,7 +66,7 @@ def cache_cflt_cluster_id(cluster_name, env_name):
     return cluster['id']
 
 def connector_list(cluster_name, env_name):
-    print(f"Listing Confluent Cloud Connectors for Cluster {cluster_name}...")
+    logger.info(f"Listing Confluent Cloud Connectors for Cluster {cluster_name}...")
     env_id = cache_cflt_env_id(env_name)
     cluster_id = cache_cflt_cluster_id(cluster_name=cluster_name, env_name=env_name)
     resp = requests.get(
@@ -77,9 +78,9 @@ def connector_list(cluster_name, env_name):
 
 def connector_delete(name, env_name, cluster_name):
     if name not in connector_list(cluster_name=cluster_name, env_name=env_name):
-        print(f"Confluent Cloud Debezium Connector with name {name} not found.")
+        logger.info(f"Confluent Cloud Debezium Connector with name {name} not found.")
         return
-    print(f"Deleting Confluent Cloud Debezium Connector with name {name}...")
+    logger.info(f"Deleting Confluent Cloud Debezium Connector with name {name}...")
     env_id = cache_cflt_env_id(env_name)
     cluster_id = cache_cflt_cluster_id(cluster_name=cluster_name, env_name=env_name)
     resp = requests.delete(
@@ -87,15 +88,15 @@ def connector_delete(name, env_name, cluster_name):
         auth=(config.CONFLUENT_CLOUD_KEY, config.CONFLUENT_CLOUD_SECRET)
     )
     resp.raise_for_status()
-    print(f"Deleted Confluent Cloud Connector with name {name}")
+    logger.info(f"Deleted Confluent Cloud Connector with name {name}")
 
-def connector_create(name, source_db, env_name, cluster_name):
+def connector_create(name, source_db, env_name, cluster_name, table_include_list):
     # The API response for this call can be obtuse, sending 500 for minor misconfigurations.
     # Therefore change carefully and test thoroughly.
     if name in connector_list(cluster_name=cluster_name, env_name=env_name):
-        print(f"Confluent Cloud Debezium Connector with name {name} already exists.")
+        logger.info(f"Confluent Cloud Debezium Connector with name {name} already exists.")
         return
-    print(f"Creating Confluent Cloud Debezium Connector with name {name}...")
+    logger.info(f"Creating Confluent Cloud Debezium Connector with name {name}...")
     env_id = cache_cflt_env_id(env_name)
     cluster_id = cache_cflt_cluster_id(cluster_name=cluster_name, env_name=env_name)
 
@@ -107,7 +108,8 @@ def connector_create(name, source_db, env_name, cluster_name):
         "tasks.max": "1",
         "output.data.format": "JSON",
         "output.key.format": "JSON",
-        "cleanup.policy": "delete"
+        "cleanup.policy": "delete",
+        "table.include.list": ','.join(table_include_list)
     }
     mysql_config = {
         "connector.class": "MySqlCdcSource",
@@ -117,8 +119,7 @@ def connector_create(name, source_db, env_name, cluster_name):
         "database.password": config.MYSQL_PASSWORD,
         "database.server.name": config.MYSQL_DB_NAME,
         "database.whitelist": config.MYSQL_DB_NAME,
-        "table.include.list": '.'.join([config.MYSQL_DB_NAME, config.USERS_TABLE_NAME]),
-        "database.include.list": "mysql_cdc_demo",
+        "database.include.list": config.MYSQL_DB_NAME,
         "snapshot.mode": "when_needed",
         "database.ssl.mode": "preferred"
     }
@@ -131,7 +132,6 @@ def connector_create(name, source_db, env_name, cluster_name):
         "database.dbname": config.PG_DATABASE,
         "database.server.name": config.PG_DATABASE,  # This is a logical name used for Confluent topics
         "database.sslmode": "require",
-        "table.include.list":f"public.{config.USERS_TABLE_NAME}", 
         "plugin.name": "pgoutput",
         "snapshot.mode": "exported"
     }
@@ -153,11 +153,11 @@ def connector_create(name, source_db, env_name, cluster_name):
         json=json_sub
     )
     resp.raise_for_status()
-    print(f"Created Confluent Cloud Connector with name {name}")
+    logger.info(f"Created Confluent Cloud Connector with name {name}")
 
 
 def k_connect_kadmin():
-    print("Connecting to Confluent Cloud Kafka with Admin Client...")
+    logger.info("Connecting to Confluent Cloud Kafka with Admin Client...")
     return AdminClient({
         'bootstrap.servers': config.CONFLUENT_BOOTSTRAP_SERVERS,
         'sasl.mechanisms': 'PLAIN',
@@ -171,14 +171,18 @@ def k_topic_list():
     topics_metadata = kadmin.list_topics(timeout=5)
     if not topics_metadata:
         raise Exception("No topics found.")
-    print(f"Found {len(topics_metadata.topics)} Kafka topics.")
+    logger.info(f"Found {len(topics_metadata.topics)} Kafka topics.")
     return topics_metadata.topics
 
 def k_topic_delete(topic_name):
     if topic_name not in k_topic_list():
-        print(f"Kafka topic {topic_name} not found.")
+        logger.info(f"Kafka topic {topic_name} not found.")
         return
-    print(f"Deleting Kafka topic {topic_name}...")
+    logger.info(f"Deleting Kafka topic {topic_name}...")
     kadmin = k_connect_kadmin()
     kadmin.delete_topics([topic_name])
-    print(f"Deleted Kafka topic {topic_name}.")
+    logger.info(f"Deleted Kafka topic {topic_name}.")
+
+def k_topic_cleanup():
+    for table in config.KAFKA_CDC_TOPICS:
+        k_topic_delete(config.KAFKA_CDC_TOPICS[table])

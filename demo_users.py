@@ -21,6 +21,8 @@ UPDATE_WEIGHT = 60
 DELETE_WEIGHT = 10
 ADDRESS_UPDATE_PROBABILITY = 0.1
 
+MYSQL_ENDPOINT_NAME = 'users_api.json'
+PG_ENDPOINT_NAME = 'users_api_rmt.json'
 LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'IT']
 
 # These should be create if not exists statements for the table
@@ -55,6 +57,8 @@ MYSQL_USERS_TABLE_CREATE = f'''
         updated_at TIMESTAMP
     )
     '''
+
+TABLES_TO_REPLICATE = [config.USERS_TABLE_NAME, ]
 
 # Fake data generator
 fake = faker.Faker()
@@ -217,19 +221,23 @@ def main(source_db, num_events, test_connection, tb_connect_kafka, fetch_users, 
     if source_db in ['PG', 'pg']:
         source_db = 'PG'
         debezium_connector_name = config.PG_CONFLUENT_CONNECTOR_NAME
-        kafka_topic_name = config.PG_KAFKA_CDC_TOPIC
         conn = db_functions.pg_connect_db()
         users_api_endpoint = PG_ENDPOINT_NAME
         db_table_create_query = PG_USERS_TABLE_CREATE
     elif source_db in ['MYSQL', 'mysql']:
         source_db = 'MYSQL'
         debezium_connector_name = config.MYSQL_CONFLUENT_CONNECTOR_NAME
-        kafka_topic_name = config.MYSQL_KAFKA_CDC_TOPIC
         conn = db_functions.mysql_connect_db()
         users_api_endpoint = MYSQL_ENDPOINT_NAME
         db_table_create_query = MYSQL_USERS_TABLE_CREATE
     else:
         raise Exception(f"Invalid source_db: {source_db}")
+    project_kit_path = 'kits/users/' + source_db.lower()
+    config.set_source_db(source_db)
+    config.set_kafka_topics(table_names=TABLES_TO_REPLICATE)
+    config.set_include_tables(TABLES_TO_REPLICATE)
+    def_files = utils.get_all_files_in_directory(directory=project_kit_path)
+
     if compare_tables:
         if compare_source_to_dest(conn, users_api_endpoint):
             # Mark start time.
@@ -257,11 +265,11 @@ def main(source_db, num_events, test_connection, tb_connect_kafka, fetch_users, 
         else:
             print(f"Source table {config.USERS_TABLE_NAME} and destination endpoint {users_api_endpoint} are either empty or not identical.")
     elif remove_pipeline:
-        print(f"Resetting the Tinybird pipeline from {source_db}...")
+        print(f"Resetting the Tinybird pipeline from {config.SOURCE_DB}...")
         cc_functions.connector_delete(name=debezium_connector_name, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME)
-        cc_functions.k_topic_delete(kafka_topic_name)
+        cc_functions.k_topic_cleanup()
         db_functions.table_drop(conn, table_name=config.USERS_TABLE_NAME)
-        tb_functions.clean_workspace(source_db=source_db, include_connector=tb_include_connector)
+        tb_functions.clean_workspace(files=def_files, include_connector=tb_include_connector)
         print("Pipeline Removed.")
     elif tb_connect_kafka:
         tb_functions.connection_create_kafka(
@@ -271,27 +279,28 @@ def main(source_db, num_events, test_connection, tb_connect_kafka, fetch_users, 
             kafka_connection_name=config.TINYBIRD_CONFLUENT_CONNECTION_NAME,
         )
     elif test_connection:
-        test_connectivity(source_db)
+        test_connectivity(config.SOURCE_DB)
     elif fetch_users:
         db_functions.table_print(conn, table_name=config.USERS_TABLE_NAME)
     elif drop_table:
         db_functions.table_drop(conn, table_name=config.USERS_TABLE_NAME)
     elif tb_clean:
-        tb_functions.clean_workspace(source_db, include_connector=tb_functions.include_connector)
+        tb_functions.clean_workspace(files=def_files, include_connector=tb_include_connector)
     elif create_pipeline:
         db_functions.table_create(
             conn,
             table_name=config.USERS_TABLE_NAME,
             query=db_table_create_query)
-        cc_functions.connector_create(name=debezium_connector_name, source_db=source_db, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME)
+        cc_functions.connector_create(
+            name=debezium_connector_name, source_db=config.SOURCE_DB, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME,
+            table_include_list=config.INCLUDE_TABLES)
         tb_functions.ensure_kafka_connection()
-        generate_events(conn, num_events, table_name=config.USERS_TABLE_NAME)
-        # Get listing of definition files
-        files_to_upload = tb_functions.get_def_files_for_db(source_db)
-        print(f"Updating local Tinybird definition files for {source_db}...")
-        tb_functions.update_datasource_info(files_to_upload, kafka_topic_name)
-        print(f"Uploading Tinybird definition files for {source_db}...")
-        tb_functions.upload_def_for_db(files_to_upload)       
+        print(f"Updating local Tinybird definition files for {config.SOURCE_DB}...")
+        tb_functions.update_datasource_info(def_files)
+        print(f"Uploading Tinybird definition files for {config.SOURCE_DB}...")
+        tb_functions.upload_def_for_db(def_files)
+        time.sleep(3)  # Give it a few seconds to warm up
+        generate_events(conn, num_events=num_events, table_name=config.USERS_TABLE_NAME)
     else:
         try:
             generate_events(conn, num_events, table_name=config.USERS_TABLE_NAME)

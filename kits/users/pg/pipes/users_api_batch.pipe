@@ -1,4 +1,4 @@
-TOKEN "pg_users_api_batch" READ
+TOKEN "users_api_batch" READ
 
 NODE get_new_events
 SQL >
@@ -18,7 +18,7 @@ SQL >
         argMax(fromUnixTimestamp64Micro(created_at), updated_at) as created_at,
         max(updated_at) as updated_at_unix,
         max(updated_at) as batch_max_updated
-    FROM pg_users_raw
+    FROM users_raw
     WHERE updated_at > last_batch_ts
     GROUP BY id
 
@@ -28,7 +28,7 @@ NODE backfill_last_batch
 SQL >
 
     WITH (SELECT max(batch_max_updated) FROM pg_users_batch) as last_batch_ts
-    SELECT * FROM pg_users_batch
+    SELECT * FROM users_batch
     WHERE batch_max_updated = last_batch_ts 
     AND id NOT IN (select id from get_new_events)
 
@@ -45,7 +45,7 @@ SQL >
 
 
 
-NODE pg_users_api_batch_3
+NODE api_publish
 SQL >
 
     SELECT * FROM produce_api

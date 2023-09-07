@@ -1,14 +1,14 @@
-NODE mysql_users_raw_pipe_0
+NODE users_mv_0
 SQL >
 
     SELECT
     id, name, email, address, phone_number, email_verified, onboarded, deleted, created_at, updated_at,
     __timestamp as event_timestamp,
     toFixedString(lang, 2) as lang
-    FROM mysql_users_raw
+    FROM users_raw
 
 TYPE materialized
-DATASOURCE mysql_users_mv
+DATASOURCE users_latest
 ENGINE "ReplacingMergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(updated_at)"
 ENGINE_SORTING_KEY "id"

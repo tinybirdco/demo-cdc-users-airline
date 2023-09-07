@@ -1,4 +1,4 @@
-NODE Users_raw_handler_0
+NODE users_mv_0
 SQL >
 
     SELECT id, name, email, address, phone_number, email_verified, onboarded, deleted, 
@@ -6,9 +6,9 @@ SQL >
     toFixedString(lang, 2) as lang,
     fromUnixTimestamp64Micro(created_at) as created_at,
     fromUnixTimestamp64Micro(updated_at) as updated_at 
-    FROM pg_users_raw
+    FROM users_raw
 
 TYPE materialized
-DATASOURCE pg_users_mv
+DATASOURCE users_latest
 
 

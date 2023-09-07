@@ -2,13 +2,14 @@
 
 import psycopg2
 import mysql.connector
-from .utils import Config
+from .utils import Config, setup_logging
 
 # Sensitive information in external file to avoid Git tracking
 config = Config()
+logger = setup_logging()
 
 def mysql_connect_db():
-    print("Connecting to the MySQL database...")
+    logger.info("Connecting to the MySQL database...")
     conn = mysql.connector.connect(
         host=config.MYSQL_HOST_URL,
         port=config.MYSQL_PORT,
@@ -16,16 +17,26 @@ def mysql_connect_db():
         password=config.MYSQL_PASSWORD
     )
     cur = conn.cursor()
-    print(f"Creating the {config.MYSQL_DB_NAME} database if not exists...")
+    logger.info(f"Creating the {config.MYSQL_DB_NAME} database if not exists...")
     cur.execute(f"CREATE DATABASE IF NOT EXISTS {config.MYSQL_DB_NAME}")
+    cur.fetchall()
+    cur.execute(f"USE {config.MYSQL_DB_NAME}")
     cur.fetchall()
     cur.close()
     conn.database = config.MYSQL_DB_NAME
-    print(f"Connected to the MySQL database. id: {conn.connection_id}")
+    logger.info(f"Connected to the MySQL database. id: {conn.connection_id}")
     return conn
 
+def mysql_database_drop(conn):
+    logger.info(f"Dropping the {config.MYSQL_DB_NAME} database if exists...")
+    cur = conn.cursor()
+    cur.execute(f"DROP DATABASE IF EXISTS {config.MYSQL_DB_NAME}")
+    cur.fetchall()
+    cur.close()
+    logger.info(f"{config.MYSQL_DB_NAME} database dropped if it existed.")
+
 def pg_connect_db():
-    print("Connecting to the Postgres database...")
+    logger.info("Connecting to the Postgres database...")
     # Connect to PostgreSQL
     conn = psycopg2.connect(
         host=config.PG_HOST_URL,
@@ -33,7 +44,7 @@ def pg_connect_db():
         password=config.PG_PASSWORD,
         dbname=config.PG_DATABASE
     )
-    print("Connected to the Postgres database.")
+    logger.info("Connected to the Postgres database.")
     return conn
 
 def test_db_connection(db_type):
@@ -53,18 +64,18 @@ def test_db_connection(db_type):
                 WHERE table_schema = DATABASE()
             """
         else:
-            print(f'Invalid database type: {db_type}')
+            logger.info(f'Invalid database type: {db_type}')
         cur = conn.cursor()
         cur.execute(query)
         num_tables = cur.fetchone()[0]
         cur.close()
-        print(f'Number of tables in {db_type} database: {num_tables}')
+        logger.info(f'Number of tables in {db_type} database: {num_tables}')
     except Exception as e:
-        print(f'Error connecting to {db_type}: {e}')
+        logger.info(f'Error connecting to {db_type}: {e}')
 
 def table_create(conn, table_name, query):
     try:
-        print(f"Creating the {table_name} table if not exists...")
+        logger.info(f"Creating the {table_name} table if not exists...")
         cur = conn.cursor()
         cur.execute(query)
         
@@ -74,36 +85,35 @@ def table_create(conn, table_name, query):
 
         conn.commit()
         cur.close()
-        print(f"{table_name} table created successfully.")
+        logger.info(f"{table_name} table created successfully.")
     except Exception as e:
-        print(f"Error creating table: {e}")
+        logger.info(f"Error creating table: {e}")
         conn.rollback()
 
-
 def table_fetch(conn, table_name):
-    print("Fetching the current list of users...")
+    logger.info("Fetching the current list of users...")
     with conn.cursor() as cur:
         cur.execute(f"SELECT * FROM {table_name}")
         users = cur.fetchall() or []
-    print(f"Fetched {len(users)} users.")
+    logger.info(f"Fetched {len(users)} users.")
     return users
 
 def table_print(conn, table_name):
     cur = conn.cursor()
     cur.execute(f"SELECT * FROM {table_name} ORDER BY id ASC")
     users = cur.fetchall()
-    print(f"{table_name}:")
+    logger.info(f"{table_name}:")
     for user in users:
-        print(user)
+        logger.info(user)
     cur.close()
 
 def table_drop(conn, table_name):
-    print(f"Dropping the {table_name} table if exists...")
+    logger.info(f"Dropping the {table_name} table if exists...")
     cur = conn.cursor()
     cur.execute(f'DROP TABLE IF EXISTS {table_name}')
     conn.commit()
     cur.close()
-    print(f"{table_name} table dropped if it existed.")
+    logger.info(f"{table_name} table dropped if it existed.")
 
 def table_column_names(conn, table_name):
     cur = conn.cursor()

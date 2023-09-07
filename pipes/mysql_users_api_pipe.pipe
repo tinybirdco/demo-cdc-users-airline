@@ -1,7 +1,0 @@
-TOKEN "mysql_users_api_read" READ
-
-NODE Users_api_0
-SQL >
-
-    SELECT * FROM mysql_users_mv FINAL
-    order by id
