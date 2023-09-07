@@ -4,13 +4,14 @@ This repo walks through learning how to replicate a transactional table into Tin
 
 There are currently two examples; a simple `Users` table with inserts, updates and deletes handled by the demo_users.py script; a more complex demo with three tables tracking flights, passengers and luggage through an airport terminal handled by the demo_airport.py script.
 
-* We provide examples of sourcing from both Postgres and MySQL, both hosted on AWS RDS.
-* The Table(s) are captured using a Confluent Cloud CDC Connector, which is based on Debezium. This Connector streams the CDC events onto a Topic with a name based on the database schema and table name. This Connector can send the initial snapshot of the table along with change events.
-* The Topic(s) are then ingested into Tinybird in a raw format, and materialized into a replica of the Table(s) where changes have been finalised.
-* We handle the variations between Postgres and MySQL types
+This readme deals with the Airport demo, for the simple Users demo see readme_users.md
+
+* We provide examples of sourcing from MySQL hosted on AWS RDS.
+* The Tables are captured using a Confluent Cloud CDC Connector, which is based on Debezium. This Connector streams the CDC events onto a Topic with a name based on the database schema and table name. This Connector can send the initial snapshot of the table along with change events.
+* The Topics are then ingested into Tinybird in a raw format, and materialized into a replica of the Tables where changes have been finalised.
 * We can use a combination of the source database ``id`` column and a last updated timestamp ``updated_at`` to show how Tinybird can quickly and easily reconstruct a table.
-* Once everything is configured (see below), the scripts handle creating the database table, creating the Debezium connection, creating Tinybird Data Sources, Pipes, and an API Endpoint, and generating CDC event by updating the source Database.
-* This demo was developed with databases on AWS RDS. The demo should work with other cloud providers of Postgres and MySQL.
+* Once everything is configured (see below), the script handles creating the database table, creating the Debezium connection, creating Tinybird Data Sources, Pipes, and an API Endpoint, and generating CDC event by updating the source Database.
+* This demo was developed with databases on AWS RDS. The demo should work with other cloud providers of MySQL, and could be ported to other database types if attention is paid to schema and query compatibility.
 * This demo was developed with Confluent Cloud and its APIs.  Any cloud provider with a Debezium-based connector should work with CDC processing, but this demo script exercises Confluent APIs for creating and deleting resources. 
 
 To get started with this demo, you need to the following:
@@ -22,7 +23,7 @@ The demo script will:
 
 1. Ensure the Source Database exists.
 2. Ensure the required Tables are created. 
-4. Create the appropriate Postgres or MySQL Debezium-based Connector in Confluent Cloud.
+4. Create the appropriate MySQL Debezium-based Connector in Confluent Cloud.
 5. The Confluent Connector will create the Kafka Topic, snapshot the initial table state, and prepare to replicate changes.
 6. Ensure that Tinybird has a Confluent connection to your Confluent Cloud cluster.
 7. Ingest the Topic into a 'raw' Tinybird Confluent Datasource containing all the table change events.
@@ -33,7 +34,6 @@ The demo script will:
 
 You may re-run the demo script to generate further events to explore how they propagate through the pipeline.
 You may also run the script with another switch to remove the Pipeline.
-There may be additional switches in the scripts for other actions on a case by case basis.
 
 ## Prereqs
 
@@ -70,66 +70,24 @@ If you don't already have a Tinybird Workspace, you will need to create one.
 You can test if Tinybird can connect to your Confluent cluster by putting the connection details into the 'Add Datasource' interface in the UI - if it can connect it will retrieve a list of Topics on the cluster.
 
 ### Confirm your database server is configured to generate CDC events. 
-#### Using Postgres
 
 1. Access RDS via the AWS Console
 2. Create Parameter group
-Name / description / family: postgres14
+Name / description / family: mysql57
 
 3. Edit the param group, set these values:
-rds.logical_replication = 1
-
-4. Create the Database.
-Postgres 14
-Use the param group via additional options.
-Make it publicly available in the network security group.
-
-5. Get the connectivity information
-Once the Database is deployed (it'll take a few minutes)
-Grab the Postgres connection details and put them into conf.py
-
-#### Using MySQL
-
-Setting up MySQL follows much the same steps as Postgres above, with some variations detailed below.
-
-When you create the parameter group in RDS, ensure that you do not select Aurora-Mysql, but plain MySQL (I'm using 5.7)
-
-The parameters to set for MySQL are:
 binlog_format=ROW
 binlog_row_image=full
 
+4. Create the Database.
+MySQL 5.7 (note that 8 is preferred in most cases, this demo was simply prepared on the older version)
+Use the param group via additional options.
+Make it publicly available in the network security group.
 You must enable Backups as well.
 
-Grab the connectivity information and put it into conf.py
-
-## Using the 'Users' Demo
-
-In these following commands you should submit either 'PG' or 'MYSQL' as your Database type with the ``--source-db`` command. 
-
-If you don't supply a ``--source-db`` it will default to Postgres.
-
-2. Test your connectivity
-```
-python demo_users.py --test-connection --source-db PG
-```
-
-3. Create the Pipeline
-Run the demo script to generate the full pipelines so you can explore it.
-```
-python demo_users.py --create-pipeline --source-db PG
-```
-
-5. Generate events
-You can generate more events to see how the Pipeline works, or test the latency etc. by running the script without other switches.
-```
-python demo_users.py --source-db PG
-```
-
-4. Remove the Pipeline
-You can remove the pipeline again using the removal command, this can also be used to recreate it by combining the commands
-```
-python demo_users.py --remove-pipeline --source-db PG
-```
+5. Get the connectivity information
+Once the Database is deployed (it'll take a few minutes)
+Grab the connection details and put them into conf.py
 
 ## Using the 'Airport' Demo
 
