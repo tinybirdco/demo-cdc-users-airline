@@ -24,7 +24,7 @@ This repo walks through learning how to replicate a transactional table into Tin
 * The demo was written and tested with PostgreSQL and MySQL, both hosted on AWS RDS. The demo should work with other cloud providers of these databases.
 * Database table changes are captured using Confluent Cloud CDC Connectors, which are based on Debezium. This Connector streams the CDC events onto a Kafka Topic with a name based on the database schema and table name. This Connector can send the initial snapshot of the table along with change events.
 * This Topic is then ingested into Tinybird in a raw format, and materialized into a replica of the current Users table where updates and deletes have been finalized.
-* Once everything is configured (see below), the `demo_cdc.py` script handles creating the database table, creating the Debezium connection, creating Tinybird Data Sources, Pipes, and an API Endpoint, and generating CDC event by updating the source Database.
+* Once everything is configured (see below), the `demo_users.py` script handles creating the database table, creating the Debezium connection, creating Tinybird Data Sources, Pipes, and an API Endpoint, and generating CDC event by updating the source Database.
 * This script was developed with Confluent Cloud and its APIs.  Any cloud provider with a Debezium-based connector should work with CDC processing, but this demo script exercises Confluent APIs for creating and deleting CDC connectors. All of this is encapsulated in the `./modules/cc_functions.py` file. 
 * The combination of the source database (user) ``id`` column and a last updated timestamp ``updated_at`` shows how Tinybird can quickly and easily reconstruct the table.
 
@@ -58,7 +58,7 @@ If you don't supply ``--source-db`` it will default to PostgreSQL.
 
 #### Test your connectivity ``--test-connection``
 ```
-python demo_cdc.py --test-connection --source-db PG
+python demo_users.py --test-connection --source-db PG
 ```
 
 #### Specify the number of database events to trigger ``--num-events``
@@ -89,7 +89,7 @@ Run the demo script to generate the full pipelines so you can explore it.
 The script will create a new database table and create a Confluent CDC Connector. It will also add two Data Sources and two Pipes to your Tinybird Workspace. 
 
 ```
-python demo_cdc.py --create-pipeline --source-db PG
+python demo_users.py --create-pipeline --source-db PG
 ```
 
 After creating the pipeline, it will trigger a set of database events. By default, it will create 10 events, and you can specify a custom number with `--num-events`.
@@ -98,18 +98,18 @@ After creating the pipeline, it will trigger a set of database events. By defaul
 You can generate more events to see how the Pipeline works, or test the latency, by running the script without other switches.
 
 ```
-python demo_cdc.py
+python demo_users.py
 ```
 
 Here we are generating 1000 CDC events for a MySQL database: 
 ```
-python demo_cdc.py --source-db MySQL --num-events 1000
+python demo_users.py --source-db MySQL --num-events 1000
 ```
 
 #### Remove the Pipeline ``--remove-pipeline``
 You can remove the pipeline using the `--remove-pipeline` command.
 ```
-python demo_cdc.py --remove-pipeline --source-db PG 
+python demo_users.py --remove-pipeline --source-db PG 
 ```
 Removing the pipeline deletes the database table, deletes the Confluent Connector, and deletes the Tinybird Data Sources and Pipes. It will not remove your Confluent streaming cluster or the Tinybird workspace. 
 
@@ -243,7 +243,7 @@ TINYBIRD_CONFLUENT_CONNECTION_NAME = ''  # Name that Tinybird uses for the Tiny
 
 ### [Script constants](#constants)
 
-The following constants are set at the top of the `demo_cdc.py` script:
+The following constants are set at the top of the `demo_users.py` script:
 
 ```
 # Demo Constants
