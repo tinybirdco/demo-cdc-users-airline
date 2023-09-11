@@ -3,3 +3,4 @@ mysql-connector-python
 confluent-kafka
 faker
 click
+requests
