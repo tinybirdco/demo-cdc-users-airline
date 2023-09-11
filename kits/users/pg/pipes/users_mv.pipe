@@ -1,11 +1,19 @@
 NODE users_mv_0
 SQL >
 
-    SELECT id, name, email, address, phone_number, email_verified, onboarded, deleted, 
-    __timestamp as event_timestamp,
-    toFixedString(lang, 2) as lang,
-    fromUnixTimestamp64Micro(created_at) as created_at,
-    fromUnixTimestamp64Micro(updated_at) as updated_at 
+    SELECT
+        id,
+        coalesce(name, '') as name,
+        coalesce(email,'') as email,
+        coalesce(address,'') as address,
+        coalesce(phone_number,'') as phone_number,
+        coalesce(email_verified,0) as email_verified,
+        coalesce(onboarded,0) as onboarded,
+        coalesce(deleted,0) as deleted,
+        __timestamp as event_timestamp,
+        toFixedString(coalesce(lang,''), 2) as lang,
+        fromUnixTimestamp64Micro(coalesce(created_at,0)) as created_at,
+        coalesce(fromUnixTimestamp64Micro(updated_at),event_timestamp) as updated_at
     FROM users_raw
 
 TYPE materialized

@@ -1,21 +1,21 @@
 
 SCHEMA >
     `id` Int16 `json:$.id`,
-    `name` String `json:$.name`,
-    `email` String `json:$.email`,
-    `address` String `json:$.address`,
-    `phone_number` String `json:$.phone_number`,
-    `email_verified` UInt8 `json:$.email_verified`,
-    `onboarded` UInt8 `json:$.onboarded`,
-    `deleted` UInt8 `json:$.deleted`,
-    `lang` String `json:$.lang`,
-    `created_at` Int64 `json:$.created_at`,
-    `updated_at` Int64 `json:$.updated_at`,
+    `name` Nullable(String) `json:$.name`,
+    `email` Nullable(String) `json:$.email`,
+    `address` Nullable(String) `json:$.address`,
+    `phone_number` Nullable(String) `json:$.phone_number`,
+    `email_verified` Nullable(UInt8) `json:$.email_verified`,
+    `onboarded` Nullable(UInt8) `json:$.onboarded`,
+    `deleted` Nullable(UInt8) `json:$.deleted`,
+    `lang` Nullable(String) `json:$.lang`,
+    `created_at` Nullable(Int64) `json:$.created_at`,
+    `updated_at` Nullable(Int64) `json:$.updated_at`,
     `__deleted` String `json:$.__deleted`
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(__timestamp)"
-ENGINE_SORTING_KEY "__timestamp"
+ENGINE_SORTING_KEY "id, __timestamp"
 
 KAFKA_CONNECTION_NAME 'cluster_eu_cdc_demo'
 KAFKA_TOPIC 'postgres_cdc_demo.public.users'

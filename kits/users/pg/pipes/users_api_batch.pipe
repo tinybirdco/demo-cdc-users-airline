@@ -3,7 +3,7 @@ TOKEN "users_api_batch" READ
 NODE get_new_events
 SQL >
 
-    WITH (SELECT max(batch_max_updated) FROM pg_users_batch) as last_batch_ts
+    WITH (SELECT max(batch_max_updated) FROM users_batch) as last_batch_ts
     SELECT 
         id, 
         argMax(name, updated_at) as name, 
@@ -27,7 +27,7 @@ SQL >
 NODE backfill_last_batch
 SQL >
 
-    WITH (SELECT max(batch_max_updated) FROM pg_users_batch) as last_batch_ts
+    WITH (SELECT max(batch_max_updated) FROM users_batch) as last_batch_ts
     SELECT * FROM users_batch
     WHERE batch_max_updated = last_batch_ts 
     AND id NOT IN (select id from get_new_events)
