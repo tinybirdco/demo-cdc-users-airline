@@ -1,6 +1,12 @@
 # CDC Demo
 
-This repository serves as a historical reference and is production ready code, please use as a reference only and contact support@tinybird.co for further help.
+This repository serves as a historical reference and **is not ** production ready code, please use as a reference only and contact support@tinybird.co for further help.
+If you want to read more about doing change data capture processing with Tinybird, consider these articles:
+
+* https://www.tinybird.co/blog-posts/real-time-change-data-capture
+* https://www.tinybird.co/blog-posts/postgres-cdc
+* https://www.tinybird.co/blog-posts/mysql-cdc
+* https://www.tinybird.co/blog-posts/mongodb-cdc
 
 ## Overview
 
