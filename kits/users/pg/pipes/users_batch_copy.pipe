@@ -10,17 +10,17 @@ SQL >
     WITH (SELECT max(batch_max_updated) FROM users_batch) as last_batch_ts
     SELECT 
         id, 
-        argMax(name, updated_at) as name, 
-        argMax(email, updated_at) as email, 
-        argMax(address, updated_at) as address, 
-        argMax(phone_number, updated_at) as phone_number, 
-        argMax(email_verified, updated_at) as email_verified, 
-        argMax(onboarded, updated_at) as onboarded,
-        argMax(deleted, updated_at) as deleted,
-        argMax(__timestamp, updated_at) as event_timestamp,
-        argMax(toFixedString(lang, 2), updated_at) as lang,
-        argMax(fromUnixTimestamp64Micro(created_at), updated_at) as created_at,
-        max(updated_at) as updated_at_unix,
+        coalesce(argMax(name, updated_at), '') as name, 
+        coalesce(argMax(email, updated_at), '') as email, 
+        coalesce(argMax(address, updated_at), '') as address, 
+        coalesce(argMax(phone_number, updated_at), '') as phone_number, 
+        coalesce(argMax(email_verified, updated_at), 0) as email_verified, 
+        coalesce(argMax(onboarded, updated_at), 0) as onboarded,
+        coalesce(argMax(deleted, updated_at), 0) as deleted,
+        coalesce(argMax(__timestamp, updated_at), toDateTime(0)) as event_timestamp,
+        coalesce(argMax(toFixedString(lang, 2), updated_at), toFixedString('', 2)) as lang,
+        coalesce(argMax(fromUnixTimestamp64Micro(created_at), updated_at), fromUnixTimestamp64Micro(0)) as created_at,
+        coalesce(max(updated_at),0) as updated_at_unix,
         max(updated_at) as batch_max_updated
     FROM users_raw
     WHERE updated_at > last_batch_ts
