@@ -1,6 +1,7 @@
 # db_functions.py
 
 import psycopg2
+import psycopg2.errors
 import mysql.connector
 from .utils import Config, setup_logging
 
@@ -36,15 +37,43 @@ def mysql_database_drop(conn):
     logger.info(f"{config.MYSQL_DB_NAME} database dropped if it existed.")
 
 def pg_connect_db():
-    logger.info("Connecting to the Postgres database...")
-    # Connect to PostgreSQL
-    conn = psycopg2.connect(
-        host=config.PG_HOST_URL,
-        user=config.PG_USERNAME,
-        password=config.PG_PASSWORD,
-        dbname=config.PG_DATABASE
-    )
-    logger.info("Connected to the Postgres database.")
+    logger.info("Attempting to connect to the PostgreSQL database...")
+    try:
+        # Try connecting to the specified database.
+        conn = psycopg2.connect(
+            host=config.PG_HOST_URL,
+            user=config.PG_USERNAME,
+            password=config.PG_PASSWORD,
+            dbname=config.PG_DATABASE
+        )
+        logger.info("Connected to the Postgres database.")
+    except psycopg2.errors.OperationalError as e:
+        if "does not exist" in str(e):
+            logger.info(f"Database {config.PG_DATABASE} does not exist, creating...")
+            # Connect to the default administrative database
+            conn = psycopg2.connect(
+                host=config.PG_HOST_URL,
+                user=config.PG_USERNAME,
+                password=config.PG_PASSWORD,
+                dbname="postgres"  # Adjust if your admin DB is different
+            )
+            conn.autocommit = True
+            cur = conn.cursor()
+            # Create the new database
+            cur.execute(f"CREATE DATABASE {config.PG_DATABASE}")
+            cur.close()
+            conn.close()
+            # Reconnect to the new database
+            conn = psycopg2.connect(
+                host=config.PG_HOST_URL,
+                user=config.PG_USERNAME,
+                password=config.PG_PASSWORD,
+                dbname=config.PG_DATABASE
+            )
+            logger.info(f"Connected to the newly created {config.PG_DATABASE} database.")
+        else:
+            raise  # Re-raise the exception if it's not the 'does not exist' case
+
     return conn
 
 def test_db_connection(db_type):

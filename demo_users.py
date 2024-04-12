@@ -12,8 +12,6 @@ import click
 from datetime import datetime
 
 config = utils.Config()
-MYSQL_ENDPOINT_NAME = 'mysql_users_api_pipe.json'
-PG_ENDPOINT_NAME = 'pg_users_api_rmt.json'
 
 # Demo Constants
 INSERT_WEIGHT = 30
@@ -22,7 +20,7 @@ DELETE_WEIGHT = 10
 ADDRESS_UPDATE_PROBABILITY = 0.1
 
 MYSQL_ENDPOINT_NAME = 'users_api.json'
-PG_ENDPOINT_NAME = 'users_api_rmt.json'
+PG_ENDPOINT_NAME = 'users_api_batch.json'
 LANGUAGES = ['EN', 'ES', 'FR', 'DE', 'IT']
 
 # These should be create if not exists statements for the table
