@@ -1,0 +1,11 @@
+TOKEN "latest_baggage_info_endpoint_read_3261" READ
+
+NODE latest_baggage_info_0
+SQL >
+
+    SELECT id, flight_id, status, weight
+    FROM baggage_raw
+    ORDER BY id, __timestamp desc
+    LIMIT 1 BY id
+
+

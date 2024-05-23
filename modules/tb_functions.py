@@ -261,14 +261,15 @@ def pipes_list():
     logger.info(f"Found {len(resp.json()['pipes'])} Tinybird Pipes.")
     return resp.json()['pipes']
 
-def endpoint_fetch(endpoint_name):
+def endpoint_fetch(endpoint_name, strict=True):
     # e.g. https://api.tinybird.co/v0/pipes/pg_users_api_rmt.json
     logger.info(f"Fetching Tinybird Endpoint {endpoint_name}...")
     resp = requests.get(
         config.TB_BASE_URL + f"pipes/{endpoint_name}",
         headers={'Authorization': f'Bearer {config.TINYBIRD_API_KEY}'}
     )
-    resp.raise_for_status()
+    if strict:
+        resp.raise_for_status()
     return resp.json()
 
 def pipes_delete(names):
