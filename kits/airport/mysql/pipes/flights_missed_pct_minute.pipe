@@ -7,8 +7,8 @@ SQL >
         f.closed_at,
         f.passenger_count as booked_passengers,
         count(p.id) as missed_passengers
-    from flights_latest as f FINAL
-    inner join passengers_latest as p FINAL
+    from latest_flight_info as f 
+    inner join latest_passenger_info as p
     on p.flight_id = f.id
     where f.closed_at is not null
     and p.status = 'notboarded'
@@ -20,17 +20,17 @@ NODE flights_missed_pct_minute_1
 SQL >
 
     %
-            SELECT
-                toStartOfMinute(closed_at) as window,
-                -- Calculate percentage, defaulting to 0 if denominator is 0 or null
-                round(
-                    ifNull(sum(missed_passengers) * 100 / nullIf(sum(booked_passengers), 0), 0),
-                    2
-                ) as flights_missed_pct
-            FROM flights_missed_pct_minute_0
-            WHERE closed_at >= {% if defined(start) %} {{DateTime(start)}} {% else %} subtractHours(now(), 1) {% end %}
-            AND closed_at <= {% if defined(end) %} {{DateTime(end)}} {% else %} now() {% end %}
-            GROUP BY window
+      SELECT
+          toStartOfMinute(closed_at) as window,
+          -- Calculate percentage, defaulting to 0 if denominator is 0 or null
+          round(
+              ifNull(sum(missed_passengers) * 100 / nullIf(sum(booked_passengers), 0), 0),
+              2
+          ) as flights_missed_pct
+      FROM flights_missed_pct_minute_0
+      WHERE closed_at >= {% if defined(start) %} {{DateTime(start)}} {% else %} subtractHours(now(), 1) {% end %}
+      AND closed_at <= {% if defined(end) %} {{DateTime(end)}} {% else %} now() {% end %}
+      GROUP BY window
 
 
 

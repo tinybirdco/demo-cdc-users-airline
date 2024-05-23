@@ -1,20 +1,40 @@
-TOKEN "passengers_by_flight_status_endpoint_read_4036" READ
-
 NODE passengers_by_flight_status_0
 SQL >
 
-    %
-    select
+    SELECT
         f.flight_number,
-        f.passenger_count as passengers_booked,
-        f.status as flight_status,
-        p.status as passenger_status,
-        count(p.id) as passenger_total
-    from flights_latest as f FINAL
-    inner join passengers_latest as p FINAL
-    on p.flight_id = f.id
-    where flight_status =  {{String(flight_status, 'open')}}
-    group by flight_number, passengers_booked, flight_status, passenger_status
-    order by f.flight_number
+        f.status AS flight_status,
+        f.passenger_count AS booked,
+        COUNT(CASE WHEN p.status = 'checkedin' AND f.status IN ('open', 'closed') THEN 1 ELSE NULL END) AS checkedin,
+        COUNT(CASE WHEN p.status = 'checkedin' AND f.status = 'boarding' THEN 1 ELSE NULL END) AS boarding,
+        COUNT(CASE WHEN p.status = 'onboarded' AND f.status IN ('boarding', 'boarded', 'departed') THEN 1 ELSE NULL END) AS onboarded,
+        COUNT(CASE WHEN p.status = 'notboarded' AND f.status IN ('boarded', 'departed') THEN 1 ELSE NULL END) AS notboarded,
+        f.passenger_count - (
+            COUNT(CASE WHEN p.status = 'checkedin' AND f.status IN ('open', 'closed') THEN 1 ELSE NULL END) +
+            COUNT(CASE WHEN p.status = 'checkedin' AND f.status = 'boarding' THEN 1 ELSE NULL END) +
+            COUNT(CASE WHEN p.status = 'onboarded' AND f.status IN ('boarding', 'boarded', 'departed') THEN 1 ELSE NULL END) +
+            COUNT(CASE WHEN p.status = 'notboarded' AND f.status IN ('boarded', 'departed') THEN 1 ELSE NULL END)
+        ) AS notcheckedin
+    FROM
+        latest_flight_info as f
+    LEFT JOIN
+        latest_passenger_info as p
+    ON
+        p.flight_id = f.id
+    WHERE
+        f.status != 'departed'
+        OR (f.status = 'departed' AND f.departed_at > now() - INTERVAL 20 SECOND)
+    GROUP BY
+        f.flight_number, f.passenger_count, f.status
+    ORDER BY
+        CASE 
+            WHEN f.status = 'departed' THEN 5
+            WHEN f.status = 'boarded' THEN 4
+            WHEN f.status = 'boarding' THEN 3
+            WHEN f.status = 'closed' THEN 2
+            WHEN f.status = 'open' THEN 1
+            ELSE 6
+        END,
+        f.flight_number ASC
 
 
