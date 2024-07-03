@@ -323,13 +323,16 @@ def start_departure(conn, flight):
 
     logger.info(f"Flight {flight['id']} has departed.")
 
-def process_active_flights(conn):
+def process_active_flights(conn, strict=True):
     active_flights = get_active_flights(conn)
     logger.info(f"There are currently {len(active_flights)} of {MAX_ACTIVE_FLIGHTS} active flights.")
     
-    data = tb_functions.endpoint_fetch('flights_missed_pct_minute.json')['data']
-    sorted_data = sorted(data, key=lambda x: x['time_interval'], reverse=True)
-    miss_rate_last_interval = sorted_data[0]['flights_missed_pct']
+    resp = tb_functions.endpoint_fetch(endpoint_name='flights_missed_pct_minute.json', strict=strict)
+    if 'data' in resp:
+        sorted_data = sorted(resp['data'], key=lambda x: x['time_interval'], reverse=True)
+        miss_rate_last_interval = sorted_data[0]['flights_missed_pct']
+    else:
+        miss_rate_last_interval = 0
     
     create_new_flight = False
     if miss_rate_last_interval < MIN_MISSED_FLIGHTS:
@@ -403,13 +406,13 @@ def generate_passengers(conn, passengers_to_generate):
     conn.commit()
     logger.info(f"Generated {passengers_to_generate} new passengers with {len(baggage_values)} pieces of luggage.")
 
-def generate_events(conn):
+def generate_events(conn, seed_tables=False):
     logger.info("Starting the event generation loop...")
     print("Starting the event generation loop...")  # Printing as well so there's something in the console output
     while True:
         loop_start_time = time.time()
         process_passenger_pool(conn)
-        process_active_flights(conn)
+        process_active_flights(conn, strict=not seed_tables)
         active_flights = get_active_flights(conn)
         for flight in active_flights:
             if flight['status'] == 'open':
@@ -436,6 +439,11 @@ def generate_events(conn):
         loop_time_delta = loop_end_time - loop_start_time
         logger.info(f"Event generation loop completed in {round(loop_time_delta, 1)} seconds.")
         print(f"Event generation loop completed in {round(loop_time_delta, 1)} seconds.")  # Printing as well so there's something in the console output
+        if seed_tables:
+            # Wait a couple of seconds for Topics to be created
+            time.sleep(3)
+            # End loop after one iteration if seeding tables
+            break
 
 @click.command()
 @click.option('--remove-pipeline', is_flag=True, help='Reset the pipeline. Will Drop source table, remove debezium connector, drop the topic, and clean the Tinybird workspace')
@@ -468,6 +476,7 @@ def main(remove_pipeline, create_pipeline):
         
         cc_functions.connector_create(name=debezium_connector_name, source_db=source_db, env_name=config.CONFLUENT_ENV_NAME, cluster_name=config.CONFLUENT_CLUSTER_NAME,
         table_include_list=config.INCLUDE_TABLES                              )
+        generate_events(conn, seed_tables=True)
         tb_functions.ensure_kafka_connection()
         files_to_upload = utils.get_all_files_in_directory(project_kit_path)
         tb_functions.update_datasource_info(files_to_upload)

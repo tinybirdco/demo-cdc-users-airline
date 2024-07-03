@@ -1,11 +1,5 @@
 
 SCHEMA >
-    `__value` String,
-    `__topic` LowCardinality(String),
-    `__partition` Int16,
-    `__offset` Int64,
-    `__timestamp` DateTime,
-    `__key` String,
     `created_at` DateTime `json:$.created_at`,
     `flight_id` Int16 `json:$.flight_id`,
     `id` Int32 `json:$.id`,
@@ -21,10 +15,11 @@ ENGINE_PARTITION_KEY "toYYYYMM(__timestamp)"
 ENGINE_SORTING_KEY "id, status, flight_id, updated_at"
 
 KAFKA_CONNECTION_NAME 'cluster_eu_cdc_demo'
-KAFKA_TOPIC 'airporter_demo.airporter_demo.passengers'
-KAFKA_GROUP_ID 'airporter_demo.airporter_demo.passengers_1694091250'
+KAFKA_TOPIC 'mysql_cdc_demo.mysql_cdc_demo.passengers'
+KAFKA_GROUP_ID 'mysql_cdc_demo.mysql_cdc_demo.passengers_1716380430'
 KAFKA_AUTO_OFFSET_RESET 'latest'
 KAFKA_STORE_RAW_VALUE 'False'
 KAFKA_STORE_HEADERS 'False'
+KAFKA_STORE_BINARY_HEADERS 'True'
 KAFKA_TARGET_PARTITIONS 'auto'
 KAFKA_KEY_AVRO_DESERIALIZATION ''

@@ -1,0 +1,28 @@
+TOKEN "Dashboard_Read" READ
+
+NODE endpoint
+SQL >
+
+    SELECT
+      fl.flight_number as flight_number,
+      fl.status as flight_status,
+      round(SUM(CASE WHEN bl.status = 'checkedin' THEN bl.weight ELSE 0 END), 2) as baggage_checkedin,
+      round(SUM(CASE WHEN bl.status = 'loaded' THEN bl.weight ELSE 0 END), 2) as baggage_loaded,
+      round(SUM(CASE WHEN bl.status = 'offloaded' THEN bl.weight ELSE 0 END), 2) as baggage_offloaded
+    FROM latest_flight_info as fl
+    LEFT JOIN latest_baggage_info as bl 
+    ON fl.id = bl.flight_id
+    WHERE fl.departed_at is null or fl.departed_at > now64() - interval 30 SECOND
+    GROUP BY flight_number, departed_at, flight_status
+    ORDER BY
+      CASE 
+            WHEN fl.status = 'departed' THEN 5
+            WHEN fl.status = 'boarded' THEN 4
+            WHEN fl.status = 'boarding' THEN 3
+            WHEN fl.status = 'closed' THEN 2
+            WHEN fl.status = 'open' THEN 1
+            ELSE 6
+        END,
+        fl.flight_number ASC
+
+

@@ -1,0 +1,11 @@
+TOKEN "latest_passenger_info_endpoint_read_1299" READ
+
+NODE latest_passenger_info_0
+SQL >
+
+    SELECT id, flight_id, status, 
+    FROM passengers_raw
+    ORDER BY id, __timestamp desc
+    LIMIT 1 BY id
+
+
